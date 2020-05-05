@@ -1,17 +1,18 @@
 import SigitmTA from '@modules/sigitm/infra/typeorm/entities/TA/SigitmTA';
 import ICreateSigitmTADTO from '@modules/sigitm/dtos/ICreateSigitmTADTO';
-import IGroupTATableResponse from '../dtos/IGroupTableResponseDTO';
+
+import ILoadSigitmTasGroupDTO from '../dtos/ILoadSigitmTasGroupDTO';
 import { FindManyOptions, FindOneOptions } from 'typeorm';
 
-export default interface ISigitmRepository {
+export default interface ISigitmTAsRepository {
   create(data: ICreateSigitmTADTO): Promise<SigitmTA>;
-  findTable(): Promise<IGroupTATableResponse[] | undefined>;
+  findByStatusAndTipoRede(data: ILoadSigitmTasGroupDTO): Promise<SigitmTA[]>;
   findByIds(
-    ids: string[],
+    ids: number[],
     options?: FindManyOptions<SigitmTA> | undefined,
-  ): Promise<SigitmTA[] | undefined>;
-  findOne(
-    id: string,
+  ): Promise<SigitmTA[]>;
+  findById(
+    id: number,
     options?: FindOneOptions<SigitmTA> | undefined,
   ): Promise<SigitmTA | undefined>;
 }
