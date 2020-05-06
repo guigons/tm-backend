@@ -28,7 +28,7 @@
     "no-useless-constructor": "off",
     "@typescript-eslint/interface-name-prefix": [
       "error",
-      { "prefixWith": "always" }
+      { "prefixWithI": "always" }
     ],
     "@typescript-eslint/no-unused-vars": [
       "error",
