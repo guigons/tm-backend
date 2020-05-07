@@ -6,7 +6,7 @@ import TAsController from '../controllers/TAsController';
 const tasRouter = Router();
 const tasController = new TAsController();
 
-tasRouter.use(ensureAuthenticated);
+// tasRouter.use(ensureAuthenticated);
 
 tasRouter.get('/group', tasController.group);
 

@@ -22,9 +22,9 @@ export default class TasController {
 
     const loadTPsSummary = container.resolve(LoadTPsSummaryService);
 
-    const { tas } = await loadTPsSummary.execute({ ids });
+    const { tps } = await loadTPsSummary.execute({ ids });
 
-    return response.json(tas);
+    return response.json(tps);
   }
 
   public async group(request: Request, response: Response): Promise<Response> {

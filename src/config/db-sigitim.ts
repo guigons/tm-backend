@@ -21,7 +21,7 @@ export const config: ConnectionOptions = {
   port: process.env.SIGITM_DB_PORT,
   sid: process.env.SIGITM_DB_SID,
   synchronize: false,
-  logging: true,
+  logging: false,
   entities: [`${__dirname}/../modules/**/infra/typeorm/entities/**/*{.ts,.js}`],
   migrations: [
     `${__dirname}/../shared/infra/typeorm/migrations/sigitm/*{.ts,.js}`,

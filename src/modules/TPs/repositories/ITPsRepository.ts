@@ -4,7 +4,7 @@ import { FindManyOptions, FindOneOptions } from 'typeorm';
 import ILoadTPsGroupDTO from '../dtos/ILoadTPsGroupDTO';
 
 export default interface ITPsRepository {
-  findByStatusAndTipoRede(data: ILoadTPsGroupDTO): Promise<TP[]>;
+  findByDateAndTipoRede(data: ILoadTPsGroupDTO): Promise<TP[]>;
   findByIds(
     ids: number[],
     options?: FindManyOptions<TP> | undefined,

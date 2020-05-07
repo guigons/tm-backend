@@ -7,7 +7,7 @@ interface IRequest {
 }
 
 interface IResponse {
-  tas: TP[];
+  tps: TP[];
 }
 
 @injectable()
@@ -18,9 +18,9 @@ export default class LoadTPsSummaryService {
   ) {}
 
   public async execute({ ids }: IRequest): Promise<IResponse> {
-    const tas = await this.TPsRepository.findByIds(ids, {
+    const tps = await this.TPsRepository.findByIds(ids, {
       relations: ['responsavel', 'responsavelGrupo', 'criador', 'criadorGrupo'],
     });
-    return { tas };
+    return { tps };
   }
 }

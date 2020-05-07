@@ -6,7 +6,7 @@ import TPsController from '../controllers/TPsController';
 const tpsRouter = Router();
 const tpsController = new TPsController();
 
-tpsRouter.use(ensureAuthenticated);
+// tpsRouter.use(ensureAuthenticated);
 
 tpsRouter.get('/group', tpsController.group);
 

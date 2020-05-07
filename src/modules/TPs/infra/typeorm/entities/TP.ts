@@ -58,6 +58,9 @@ export default class TP {
   })
   rede: TPTipoRede;
 
+  @Column({ name: 'TQP_TIPO_REDE' })
+  idTipoRede: number;
+
   @ManyToOne(() => TPTipoPlanta)
   @JoinColumn({
     name: 'TQP_TIPO_PLANTA',

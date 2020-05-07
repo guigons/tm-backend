@@ -3,6 +3,8 @@ import {
   Repository,
   FindOneOptions,
   FindManyOptions,
+  WhereExpression,
+  Brackets,
 } from 'typeorm';
 import TP from '@modules/TPs/infra/typeorm/entities/TP';
 import ITPsRepository from '@modules/TPs/repositories/ITPsRepository';
@@ -15,33 +17,30 @@ class TPsRepository implements ITPsRepository {
     this.ormRepository = getRepository(TP, 'sigitm');
   }
 
-  public async findByStatusAndTipoRede({
-    status1,
-    status2,
+  public async findByDateAndTipoRede({
+    daysBefore,
     tipoRede1,
     tipoRede2,
   }: ILoadTPsGroupDTO): Promise<TP[]> {
     const tps = await this.ormRepository.find({
       select: ['id', 'dataCriacao'],
-      where: {
-        id: 6055,
-      },
-      // relations: ['fila'],
-      // where: (qb: WhereExpression) => {
-      //   qb.where(
-      //     new Brackets((qbRede: WhereExpression) => {
-      //       qbRede
-      //         .where('TP.idStatus = :status1', { status1 })
-      //         .orWhere('TP.idStatus = :status2', { status2 });
-      //     }),
-      //   ).andWhere(
-      //     new Brackets((qbRede: WhereExpression) => {
-      //       qbRede
-      //         .where('TP.idTipoRede = :tipoRede1', { tipoRede1 })
-      //         .orWhere('TP.idTipoRede = :tipoRede2', { tipoRede2 });
-      //     }),
-      //   );
+      // where: {
+      //   id: 6055,
       // },
+      relations: ['status', 'responsavelGrupo'],
+      where: (qb: WhereExpression) => {
+        qb.where(
+          new Brackets((qbRede: WhereExpression) => {
+            qbRede.where(`TP.TQP_DATA_CRIACAO >= sysdate-${daysBefore}`);
+          }),
+        ).andWhere(
+          new Brackets((qbRede: WhereExpression) => {
+            qbRede
+              .where('TP.idTipoRede = :tipoRede1', { tipoRede1 })
+              .orWhere('TP.idTipoRede = :tipoRede2', { tipoRede2 });
+          }),
+        );
+      },
     });
     return tps;
   }
