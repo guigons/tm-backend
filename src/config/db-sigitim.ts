@@ -27,6 +27,6 @@ export const config: ConnectionOptions = {
     `${__dirname}/../shared/infra/typeorm/migrations/sigitm/*{.ts,.js}`,
   ],
   cli: {
-    migrationsDir: `./src/shared/infra/typeorm/migration/sigitm`,
+    migrationsDir: `./src/shared/infra/typeorm/migrations/sigitm`,
   },
 };

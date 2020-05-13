@@ -24,6 +24,6 @@ export const config: ConnectionOptions = {
   entities: [`${__dirname}/../modules/**/infra/typeorm/entities/*{.ts,.js}`],
   migrations: [`${__dirname}/../shared/infra/typeorm/migrations/tm/*{.ts,.js}`],
   cli: {
-    migrationsDir: `./src/shared/infra/typeorm/migration/tm`,
+    migrationsDir: `./src/shared/infra/typeorm/migrations/tm`,
   },
 };

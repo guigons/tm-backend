@@ -1,4 +1,4 @@
-// import TP from '@modules/TPs/infra/typeorm/entities/TP';
+import 'reflect-metadata';
 import ITPsRepository from '@modules/TPs/repositories/ITPsRepository';
 import { injectable, inject } from 'tsyringe';
 import TP from '../infra/typeorm/entities/TP';

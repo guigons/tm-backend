@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import TP from '@modules/TPs/infra/typeorm/entities/TP';
 import ITPsRepository from '@modules/TPs/repositories/ITPsRepository';
 import groupArray from 'group-array';
@@ -32,7 +33,7 @@ export default class LoadTPsGroupService {
     private TPsRepository: ITPsRepository,
   ) {}
 
-  public async execute(): Promise<any> {
+  public async execute(): Promise<IResponse> {
     const status = [
       'Pendente Permissão',
       'Pendente O&M',
