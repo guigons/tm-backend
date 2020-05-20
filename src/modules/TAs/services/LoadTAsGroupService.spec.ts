@@ -1,13 +1,19 @@
 import FakeTAsRepository from '@modules/TAs/repositories/fakes/FakeTAsRepository';
+import FakeCacheProvider from '@shared/container/providers/CacheProvider/fakes/FakeCacheProvider';
 import LoadTAsGroupService from './LoadTAsGroupService';
 
 let fakeTAsRepository: FakeTAsRepository;
+let fakeCacheProvider: FakeCacheProvider;
 let loadTAsGroup: LoadTAsGroupService;
 
 describe('LoadTAsGroup', () => {
   beforeEach(() => {
     fakeTAsRepository = new FakeTAsRepository();
-    loadTAsGroup = new LoadTAsGroupService(fakeTAsRepository);
+    fakeCacheProvider = new FakeCacheProvider();
+    loadTAsGroup = new LoadTAsGroupService(
+      fakeTAsRepository,
+      fakeCacheProvider,
+    );
   });
   it('shoul be able load TAs Summary', async () => {
     const response = await loadTAsGroup.execute();

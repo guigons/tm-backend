@@ -2,6 +2,7 @@ import { injectable, inject } from 'tsyringe';
 import AppError from '@shared/errors/AppError';
 import IUsersRepository from '@modules/users/repositories/IUsersRepository';
 import User from '@modules/users/infra/typeorm/entities/User';
+import INotificationsRepository from '@modules/notifications/repositories/INotificationsRepository';
 import IHashProvider from '../providers/HashProvider/models/IHashProviders';
 
 interface IRequest {
@@ -18,6 +19,9 @@ class CreateUserService {
 
     @inject('HashProvider')
     private hashProvider: IHashProvider,
+
+    @inject('NotificationsRepository')
+    private notificationsRepository: INotificationsRepository,
   ) {}
 
   public async execute({ name, email, password }: IRequest): Promise<User> {
@@ -32,6 +36,11 @@ class CreateUserService {
       name,
       email,
       password: hashedPassword,
+    });
+
+    await this.notificationsRepository.create({
+      content: `${user.name}, Seja bem vindo!`,
+      recipient_id: user.id,
     });
 
     return user;

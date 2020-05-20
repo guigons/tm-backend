@@ -1,6 +1,5 @@
+import 'dotenv/config';
 import { ConnectionOptions } from 'typeorm';
-
-require('dotenv').config();
 
 declare let process: {
   env: {

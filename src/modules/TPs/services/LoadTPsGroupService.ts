@@ -3,6 +3,7 @@ import TP from '@modules/TPs/infra/typeorm/entities/TP';
 import ITPsRepository from '@modules/TPs/repositories/ITPsRepository';
 import groupArray from 'group-array';
 import { injectable, inject } from 'tsyringe';
+import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
 
 interface ITPGroupItem {
   status: string;
@@ -31,39 +32,45 @@ export default class LoadTPsGroupService {
   constructor(
     @inject('TPsRepository')
     private TPsRepository: ITPsRepository,
+
+    @inject('CacheProvider')
+    private cacheProvider: ICacheProvider,
   ) {}
 
   public async execute(): Promise<IResponse> {
-    const status = [
-      'Pendente Permissão',
-      'Pendente O&M',
-      'Pendente GMUD',
-      'Pré-aprovado',
-      'Levantamento Campo',
-      'Levantamento Supervisão',
-      'Autorizado',
-      'Em Execução',
-      'Fora do Prazo',
-      'Pré-baixa',
-      'Cancelado',
-      'Fechado',
-      'Não Executado',
-    ];
+    const cacheKey = 'TPsGroup';
+    let group = await this.cacheProvider.recovery<ITPGroup[]>(cacheKey);
 
-    const tps = await this.TPsRepository.findByDateAndTipoRede({
-      daysBefore: 7,
-      tipoRede1: 304,
-      tipoRede2: 305,
-    });
+    if (!group) {
+      const status = [
+        'Pendente Permissão',
+        'Pendente O&M',
+        'Pendente GMUD',
+        'Pré-aprovado',
+        'Levantamento Campo',
+        'Levantamento Supervisão',
+        'Autorizado',
+        'Em Execução',
+        'Fora do Prazo',
+        'Pré-baixa',
+        'Cancelado',
+        'Fechado',
+        'Não Executado',
+      ];
 
-    const tpsGroup: ITPGroupArray = groupArray(
-      tps,
-      'responsavelGrupo.nome',
-      'status.nome',
-    ) as ITPGroupArray;
+      const tps = await this.TPsRepository.findByDateAndTipoRede({
+        daysBefore: 7,
+        tipoRede1: 304,
+        tipoRede2: 305,
+      });
 
-    const group: ITPGroup[] = Object.keys(tpsGroup).map(
-      (grupoResponsavel: string) => {
+      const tpsGroup: ITPGroupArray = groupArray(
+        tps,
+        'responsavelGrupo.nome',
+        'status.nome',
+      ) as ITPGroupArray;
+
+      group = Object.keys(tpsGroup).map((grupoResponsavel: string) => {
         return {
           grupoResponsavel,
           data: status.map(s => ({
@@ -83,8 +90,10 @@ export default class LoadTPsGroupService {
             return total;
           }, 0),
         };
-      },
-    );
+      });
+
+      this.cacheProvider.save({ key: cacheKey, value: group, expire: 10 * 60 });
+    }
 
     return { group };
   }

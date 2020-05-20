@@ -23,6 +23,7 @@ class TAsRepository implements ITAsRepository {
     tipoRede1,
     tipoRede2,
   }: ILoadTAsGroupDTO): Promise<TA[]> {
+    console.log('TAS FOI NO BANCO!');
     const tas = await this.ormRepository.find({
       select: ['id', 'dataCriacao'],
       relations: ['fila'],

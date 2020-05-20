@@ -1,13 +1,19 @@
 import FakeTPsRepository from '@modules/TPs/repositories/fakes/FakeTPsRepository';
+import FakeCacheProvider from '@shared/container/providers/CacheProvider/fakes/FakeCacheProvider';
 import LoadTPsGroupService from './LoadTPsGroupService';
 
 let fakeTPsRepository: FakeTPsRepository;
+let fakeCacheProvider: FakeCacheProvider;
 let loadTPsGroup: LoadTPsGroupService;
 
 describe('LoadTPsGroup', () => {
   beforeEach(() => {
     fakeTPsRepository = new FakeTPsRepository();
-    loadTPsGroup = new LoadTPsGroupService(fakeTPsRepository);
+    fakeCacheProvider = new FakeCacheProvider();
+    loadTPsGroup = new LoadTPsGroupService(
+      fakeTPsRepository,
+      fakeCacheProvider,
+    );
   });
   it('shoul be able load TPs Summary', async () => {
     const response = await loadTPsGroup.execute();

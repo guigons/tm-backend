@@ -14,18 +14,39 @@ services:
   #   depends_on:
   #     - db
   db:
-    container_name: tm-collector-database
+    container_name: tm-database
     image: postgres
     volumes:
-      - tm-collector-data:/data
+      - tm-data:/data
     ports:
       - '${TM_DB_PORT}:${TM_DB_PORT}'
     networks:
-      - tm-collector-network
+      - tm-network
     environment:
       - POSTGRES_DB=${TM_DB_DATABASE}
       - POSTGRES_USER=${TM_DB_USERNAME}
       - POSTGRES_PASSWORD=${TM_DB_PASSWORD}
+  db_mongo:
+    container_name: tm-database-mongo
+    image: mongo
+    volumes:
+      - tm-data:/data
+    ports:
+      - '${TM_MONGO_DB_PORT}:${TM_MONGO_DB_PORT}'
+    networks:
+      - tm-network
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME: ${TM_MONGO_DB_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD: ${TM_MONGO_DB_PASSWORD}
+  db_redis:
+    container_name: redis
+    image: redis:alpine
+    volumes:
+      - tm-data:/data
+    ports:
+      - '${REDIS_DB_PORT}:${REDIS_DB_PORT}'
+    networks:
+      - tm-network
   # migrations:
   #   container_name: migrations
   #   build:
@@ -37,8 +58,8 @@ services:
   #   depends_on:
   #     - db
 volumes:
-  tm-collector-data:
+  tm-data:
 
 networks:
-  tm-collector-network:
+  tm-network:
     driver: bridge
