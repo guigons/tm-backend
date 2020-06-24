@@ -4,6 +4,7 @@ import {
   CreateDateColumn,
   Column,
   ObjectIdColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('notifications')
@@ -23,7 +24,7 @@ class Notification {
   @CreateDateColumn()
   created_at: Date;
 
-  @CreateDateColumn()
+  @UpdateDateColumn()
   updated_at: Date;
 }
 
