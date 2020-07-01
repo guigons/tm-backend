@@ -3,10 +3,11 @@ import IUserPreferencesRepository from '@modules/users/repositories/IUserPrefere
 import { ObjectID } from 'mongodb';
 import { injectable, inject } from 'tsyringe';
 import ITemplatesRepository from '@modules/charts/repositories/ITemplatesRepository';
-import { ChartOptions, ChartData } from 'chart.js';
+import { ChartData } from 'chart.js';
 import ITPsRepository from '@modules/sigitm/modules/TPs/repositories/ITPsRepository';
 import TP from '@modules/sigitm/modules/TPs/infra/typeorm/entities/TP';
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
+import IStampsRepository from '@modules/sigitm/modules/stamps/repositories/IStampsRepository';
 import { transparentize } from 'polished';
 import {
   format,
@@ -21,11 +22,7 @@ interface IRequest {
   user_id: string;
   template_id: ObjectID;
   chartPreference_id: ObjectID;
-}
-
-interface IChartConfig {
-  data: ChartData;
-  options: ChartOptions;
+  maxGroupColumns?: number;
 }
 
 interface ITPGroupArray {
@@ -46,13 +43,17 @@ class ShowChartService {
 
     @inject('CacheProvider')
     private cacheProvider: ICacheProvider,
+
+    @inject('StampsRepository')
+    private stampsRepository: IStampsRepository,
   ) {}
 
   public async execute({
     user_id,
     template_id,
     chartPreference_id,
-  }: IRequest): Promise<IChartConfig> {
+    maxGroupColumns,
+  }: IRequest): Promise<ChartData> {
     const userPreferences = await this.userPreferencesRepository.findByUserId(
       user_id,
     );
@@ -81,10 +82,8 @@ class ShowChartService {
     const now = new Date();
     const daysBefore = differenceInCalendarDays(now, chartPreference.start);
 
-    const cacheKey = `ChartTPs-${daysBefore}ddd`;
+    const cacheKey = `ChartTPs-${daysBefore}d`;
     let tps = await this.cacheProvider.recovery<TP[]>(cacheKey);
-
-    // this.cacheProvider.invalidate(cacheKey);
 
     if (!tps) {
       tps = await this.TPsRepository.findByDataInicioPrevAndTipoRede(
@@ -125,41 +124,19 @@ class ShowChartService {
         },
       );
 
-      this.cacheProvider.save({ key: cacheKey, value: tps, expire: 120 * 60 });
+      const stamps = await this.stampsRepository.findAll();
+      tps.forEach(tp => tp.setCarimbosDetails(stamps));
+
+      this.cacheProvider.save({ key: cacheKey, value: tps, expire: 24 * 3600 });
     }
 
     const tpsFiltered = filterByTemplate(tps, template);
 
-    const chart: IChartConfig = {
-      data: {
-        labels: [],
-        datasets: [],
-      },
-      options: {
-        maintainAspectRatio: false,
-        legend: { position: 'top', display: false },
-        scales: {
-          xAxes: [
-            {
-              stacked: chartPreference.stacked,
-            },
-          ],
-          yAxes: [
-            {
-              stacked: chartPreference.stacked,
-
-              ticks: {
-                beginAtZero: true,
-              },
-            },
-          ],
-        },
-      },
-    };
+    const chartData: ChartData = { labels: [], datasets: [] };
 
     let tpsGrouping: ITPGroupArray = {};
 
-    if (chartPreference.groupBy) {
+    if (chartPreference.groupBy && chartPreference.groupBy !== 'nao_agrupar') {
       tpsGrouping = groupArray(
         tpsFiltered,
         chartPreference.groupBy,
@@ -182,12 +159,12 @@ class ShowChartService {
         .sort((a, b) => {
           return b.count - a.count;
         })
-        .splice(0, 10);
+        .splice(0, maxGroupColumns || 10);
 
-      chart.data.labels = sortable.map(counter => counter.groupName);
-      if (chart.data.datasets) {
+      chartData.labels = sortable.map(counter => counter.groupName);
+      if (chartData.datasets) {
         const color = colors.getColor();
-        chart.data.datasets.push({
+        chartData.datasets.push({
           label: 'Qtde',
           backgroundColor: transparentize(0.8, color),
           borderColor: color,
@@ -203,12 +180,12 @@ class ShowChartService {
         end: chartPreference.end,
       });
 
-      chart.data.labels = days.map(day => format(day, 'dd-MMM'));
+      chartData.labels = days.map(day => format(day, 'dd-MMM'));
 
       Object.keys(tpsGrouping).forEach(label => {
-        if (chart.data.datasets) {
+        if (chartData.datasets) {
           const color = colors.getColor();
-          chart.data.datasets.push({
+          chartData.datasets.push({
             label,
             backgroundColor: transparentize(0.8, color),
             borderColor: color,
@@ -226,7 +203,7 @@ class ShowChartService {
       });
     }
 
-    return chart;
+    return chartData;
   }
 }
 

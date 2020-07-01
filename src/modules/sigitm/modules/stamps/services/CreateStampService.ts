@@ -31,11 +31,7 @@ class CreateStampService {
     type_id,
     category_id,
   }: IRequest): Promise<Stamp> {
-    const checkStampExists = await this.stampsRepository.findByCod(
-      cod,
-      type_id,
-      category_id,
-    );
+    const checkStampExists = await this.stampsRepository.findByCod(cod);
     if (checkStampExists) {
       throw new AppError('Stamp cod already used.');
     }

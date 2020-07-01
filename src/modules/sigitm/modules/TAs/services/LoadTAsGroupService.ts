@@ -69,7 +69,7 @@ export default class LoadTAsGroupService {
         tipoRede2: 305,
       });
 
-      this.cacheProvider.save({ key: cacheKey, value: tas, expire: 10 * 60 });
+      this.cacheProvider.save({ key: cacheKey, value: tas, expire: 15 * 60 });
     }
 
     const now = new Date();

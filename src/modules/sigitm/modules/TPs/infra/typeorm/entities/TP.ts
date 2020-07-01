@@ -23,12 +23,13 @@ import TPHistorico from './TPHistorico';
 import TPDadosIP from './TPDadosIP';
 import TPBaixa from './TPBaixa';
 import TPCiente from './TPCiente';
+import Stamp from '../../../../stamps/infra/typeorm/entities/Stamp';
 
-interface ICarimbo {
-  tipo: string | undefined;
+export interface ICarimbo {
   codigo: string;
-  descricao: string;
-  categoria: string | undefined;
+  descrição?: string;
+  tipo?: string;
+  categoria?: string;
   data: Date;
 }
 
@@ -253,24 +254,9 @@ export default class TP {
         /^((DE_|CA_|PB_)[0-9][0-9])\s+(.*?)(\n|$)/,
       );
       const codigo = extract ? extract[1] : '';
-      const descricao = extract ? extract[3] : '';
-      let tipo;
-      let categoria;
-      if (codigo.match(/^DE_14/)) {
-        tipo = 'Flexibilizado';
-      } else if (codigo.match(/^DE_/)) {
-        tipo = 'Devolvido';
-      } else if (codigo.match(/^CA_/)) {
-        tipo = 'Cancelado';
-      } else if (codigo.match(/^PB_/)) {
-        tipo = 'Pré-Baixa';
-      }
 
       return {
-        tipo,
         codigo,
-        descricao,
-        categoria,
         data: hd.data,
       };
     });
@@ -279,4 +265,39 @@ export default class TP {
   }
 
   carimbos: ICarimbo[];
+
+  setCarimbosDetails(stamps: Stamp[]): void {
+    this.carimbos = this.carimbos.map(carimbo => {
+      const stamp = stamps.find(s => s.cod === carimbo.codigo);
+      const tipo = stamp?.type.name;
+      const categoria = stamp?.category.name;
+      const descrição = stamp?.description;
+      return {
+        ...carimbo,
+        tipo,
+        categoria,
+        descrição,
+      };
+    });
+    if (this.baixa && !this.baixa.carimbo) {
+      this.baixa.carimbo = {
+        codigo: 'Não preenchido',
+        data: this.baixa.data,
+        tipo: 'Pré-Baixa',
+        categoria: 'Não preenchido',
+        descrição: 'Não preenchido',
+      };
+    }
+    if (this.baixa) {
+      const stampBaixa = stamps.find(
+        s => this.baixa.carimbo && s.cod === this.baixa.carimbo.codigo,
+      );
+      this.baixa.carimbo = {
+        ...this.baixa.carimbo,
+        tipo: stampBaixa ? stampBaixa.type.name : 'Pré-Baixa',
+        categoria: stampBaixa ? stampBaixa.category.name : 'Não Classificado',
+        descrição: stampBaixa ? stampBaixa.description : 'Não Classificado',
+      };
+    }
+  }
 }

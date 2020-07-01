@@ -59,7 +59,6 @@ class TPsRepository implements ITPsRepository {
     options?: FindOneOptions<TP> | undefined,
   ): Promise<TP | undefined> {
     const tp = await this.ormRepository.findOne(id, options);
-
     return classToClass(tp);
   }
 }

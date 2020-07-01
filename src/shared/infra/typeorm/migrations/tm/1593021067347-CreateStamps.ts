@@ -16,6 +16,7 @@ export class CreateStamps1593021067347 implements MigrationInterface {
           {
             name: 'cod',
             type: 'varchar',
+            isUnique: true,
           },
           {
             name: 'description',

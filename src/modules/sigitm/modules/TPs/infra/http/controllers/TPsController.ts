@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { container } from 'tsyringe';
-import { classToClass } from 'class-transformer';
 import LoadTPsGroupService from '../../../services/LoadTPsGroupService';
 import LoadTPsSummaryService from '../../../services/LoadTPsSummaryService';
 import LoadTPDetailsService from '../../../services/LoadTPDetailsService';
@@ -15,7 +14,7 @@ export default class TasController {
 
     const tp = await loadTPDetails.execute({ id: Number(id) });
 
-    return response.json(classToClass(tp));
+    return response.json(tp);
   }
 
   public async list(request: Request, response: Response): Promise<Response> {

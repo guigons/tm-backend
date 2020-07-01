@@ -4,11 +4,20 @@ import groupArray from 'group-array';
 import { injectable, inject } from 'tsyringe';
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
 import ISigitmGruposRepository from '@modules/sigitm/repositories/ISigitmGruposRepository';
+import IStampsRepository from '@modules/sigitm/modules/stamps/repositories/IStampsRepository';
 import ITPsRepository from '../repositories/ITPsRepository';
 import TP from '../infra/typeorm/entities/TP';
 
 interface ITPGroupItem {
-  status: string;
+  status:
+    | 'Aprovação'
+    | 'Autorizado'
+    | 'Em Execução'
+    | 'Fora do Prazo'
+    | 'Pré-baixa'
+    | 'Cancelado'
+    | 'Fechado'
+    | 'Não Executado';
   count: number;
   ids: number[];
 }
@@ -18,9 +27,24 @@ interface ITPGroup {
   data: ITPGroupItem[] | [];
   total: number;
   aprovacao: number;
+  autorizados: number;
+  emExecucao: number;
+  foraDoPrazo: number;
+  preBaixa: number;
   cancelados: number;
-  fechados: number;
-  impacto: number;
+  devolvidos: number;
+  flexibilizados: number;
+  naoExecutados: number;
+  fechados: {
+    executados: number;
+    cancelados: number;
+    rollback: number;
+    parcial: number;
+    naoExecutado: number;
+    incidencia: number;
+    naoClassificado: number;
+    total: number;
+  };
 }
 
 interface ITPGroupArray {
@@ -37,9 +61,24 @@ interface IResponse {
   groups: ITPGroup[];
   total: number;
   aprovacao: number;
+  autorizados: number;
+  emExecucao: number;
+  foraDoPrazo: number;
+  preBaixa: number;
   cancelados: number;
-  fechados: number;
-  impacto: number;
+  devolvidos: number;
+  flexibilizados: number;
+  naoExecutados: number;
+  fechados: {
+    executados: number;
+    cancelados: number;
+    rollback: number;
+    parcial: number;
+    naoExecutado: number;
+    incidencia: number;
+    naoClassificado: number;
+    total: number;
+  };
 }
 
 @injectable()
@@ -56,6 +95,9 @@ export default class LoadTPsGroupService {
 
     @inject('CacheProvider')
     private cacheProvider: ICacheProvider,
+
+    @inject('StampsRepository')
+    private stampsRepository: IStampsRepository,
   ) {}
 
   public async execute({ user_id }: IRequest): Promise<IResponse> {
@@ -74,6 +116,7 @@ export default class LoadTPsGroupService {
           select: ['id', 'dataInicioPrevisto'],
           relations: [
             'status',
+            'baixa',
             'ciente',
             'ciente.usuario',
             'ciente.grupo',
@@ -84,7 +127,10 @@ export default class LoadTPsGroupService {
         },
       );
 
-      this.cacheProvider.save({ key: cacheKey, value: tps, expire: 10 * 60 });
+      const stamps = await this.stampsRepository.findAll();
+      tps.forEach(tp => tp.setCarimbosDetails(stamps));
+
+      this.cacheProvider.save({ key: cacheKey, value: tps, expire: 15 * 60 });
     }
 
     const preferences = await this.userPreferencesRepository.findByUserId(
@@ -104,7 +150,7 @@ export default class LoadTPsGroupService {
       );
     });
 
-    const status = [
+    const status: ITPGroupItem['status'][] = [
       'Aprovação',
       'Autorizado',
       'Em Execução',
@@ -167,13 +213,37 @@ export default class LoadTPsGroupService {
             tp.ciente.grupo.id === fila.id &&
             tp.tag === 'Aprovação',
         ).length || 0,
-      fechados:
+      autorizados:
         tpsWithTag?.filter(
           tp =>
             tp.ciente &&
             tp.ciente.grupo &&
             tp.ciente.grupo.id === fila.id &&
-            tp.tag === 'Fechado',
+            tp.tag === 'Autorizado',
+        ).length || 0,
+      emExecucao:
+        tpsWithTag?.filter(
+          tp =>
+            tp.ciente &&
+            tp.ciente.grupo &&
+            tp.ciente.grupo.id === fila.id &&
+            tp.tag === 'Em Execução',
+        ).length || 0,
+      foraDoPrazo:
+        tpsWithTag?.filter(
+          tp =>
+            tp.ciente &&
+            tp.ciente.grupo &&
+            tp.ciente.grupo.id === fila.id &&
+            tp.tag === 'Fora do Prazo',
+        ).length || 0,
+      preBaixa:
+        tpsWithTag?.filter(
+          tp =>
+            tp.ciente &&
+            tp.ciente.grupo &&
+            tp.ciente.grupo.id === fila.id &&
+            tp.tag === 'Pré-baixa',
         ).length || 0,
       cancelados:
         tpsWithTag?.filter(
@@ -183,36 +253,224 @@ export default class LoadTPsGroupService {
             tp.ciente.grupo.id === fila.id &&
             tp.tag === 'Cancelado',
         ).length || 0,
-      impacto:
+      devolvidos:
         tpsWithTag?.filter(
           tp =>
             tp.ciente &&
             tp.ciente.grupo &&
             tp.ciente.grupo.id === fila.id &&
-            tp.status.nome === 'Fechado' &&
-            !tp.carimbos.some(c => c.codigo === 'PB_01'),
+            tp.carimbos.some(
+              carimbo =>
+                carimbo.tipo === 'Devolução' &&
+                carimbo.categoria === 'Devolvido',
+            ),
         ).length || 0,
+      flexibilizados:
+        tpsWithTag?.filter(
+          tp =>
+            tp.ciente &&
+            tp.ciente.grupo &&
+            tp.ciente.grupo.id === fila.id &&
+            tp.carimbos.some(carimbo => carimbo.categoria === 'Flexibilizado'),
+        ).length || 0,
+      naoExecutados:
+        tpsWithTag?.filter(
+          tp =>
+            tp.ciente &&
+            tp.ciente.grupo &&
+            tp.ciente.grupo.id === fila.id &&
+            tp.tag === 'Não Executado ',
+        ).length || 0,
+      fechados: {
+        total:
+          tpsWithTag?.filter(
+            tp =>
+              tp.ciente &&
+              tp.ciente.grupo &&
+              tp.ciente.grupo.id === fila.id &&
+              tp.tag === 'Fechado',
+          ).length || 0,
+        executados:
+          tpsWithTag?.filter(
+            tp =>
+              tp.ciente &&
+              tp.ciente.grupo &&
+              tp.ciente.grupo.id === fila.id &&
+              tp.tag === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Executado',
+          ).length || 0,
+        cancelados:
+          tpsWithTag?.filter(
+            tp =>
+              tp.ciente &&
+              tp.ciente.grupo &&
+              tp.ciente.grupo.id === fila.id &&
+              tp.tag === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Cancelado',
+          ).length || 0,
+        rollback:
+          tpsWithTag?.filter(
+            tp =>
+              tp.ciente &&
+              tp.ciente.grupo &&
+              tp.ciente.grupo.id === fila.id &&
+              tp.tag === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Rollback',
+          ).length || 0,
+        parcial:
+          tpsWithTag?.filter(
+            tp =>
+              tp.ciente &&
+              tp.ciente.grupo &&
+              tp.ciente.grupo.id === fila.id &&
+              tp.tag === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Parcial',
+          ).length || 0,
+        naoExecutado:
+          tpsWithTag?.filter(
+            tp =>
+              tp.ciente &&
+              tp.ciente.grupo &&
+              tp.ciente.grupo.id === fila.id &&
+              tp.tag === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Não Executado',
+          ).length || 0,
+        incidencia:
+          tpsWithTag?.filter(
+            tp =>
+              tp.ciente &&
+              tp.ciente.grupo &&
+              tp.ciente.grupo.id === fila.id &&
+              tp.tag === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Incidência',
+          ).length || 0,
+        naoClassificado:
+          tpsWithTag?.filter(
+            tp =>
+              tp.ciente &&
+              tp.ciente.grupo &&
+              tp.ciente.grupo.id === fila.id &&
+              tp.tag === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Não Classificado',
+          ).length || 0,
+      },
     }));
 
     return {
       groups,
       total: tpsWithTag.filter(tp => tp.ciente.grupo).length || 0,
       aprovacao:
-        tpsWithTag.filter(tp => tp.ciente.grupo && tp.tag === 'Aprovação')
-          .length || 0,
-      fechados:
-        tpsWithTag.filter(tp => tp.ciente.grupo && tp.tag === 'Fechado')
-          .length || 0,
-      cancelados:
-        tpsWithTag.filter(tp => tp.ciente.grupo && tp.tag === 'Cancelado')
-          .length || 0,
-      impacto:
         tpsWithTag.filter(
           tp =>
             tp.ciente.grupo &&
-            tp.status.nome === 'Fechado' &&
-            !tp.carimbos.some(c => c.codigo === 'PB_01'),
+            (tp.tag as ITPGroupItem['status']) === 'Aprovação',
         ).length || 0,
+      autorizados:
+        tpsWithTag.filter(
+          tp =>
+            tp.ciente.grupo &&
+            (tp.tag as ITPGroupItem['status']) === 'Autorizado',
+        ).length || 0,
+      emExecucao:
+        tpsWithTag.filter(
+          tp =>
+            tp.ciente.grupo &&
+            (tp.tag as ITPGroupItem['status']) === 'Em Execução',
+        ).length || 0,
+      foraDoPrazo:
+        tpsWithTag.filter(
+          tp =>
+            tp.ciente.grupo &&
+            (tp.tag as ITPGroupItem['status']) === 'Fora do Prazo',
+        ).length || 0,
+      preBaixa:
+        tpsWithTag.filter(
+          tp =>
+            tp.ciente.grupo &&
+            (tp.tag as ITPGroupItem['status']) === 'Pré-baixa',
+        ).length || 0,
+
+      cancelados:
+        tpsWithTag.filter(
+          tp => (tp.tag as ITPGroupItem['status']) === 'Cancelado',
+        ).length || 0,
+      devolvidos:
+        tpsWithTag.filter(tp =>
+          tp.carimbos.some(
+            carimbo =>
+              carimbo.tipo === 'Devolução' && carimbo.categoria === 'Devolvido',
+          ),
+        ).length || 0,
+      flexibilizados:
+        tpsWithTag.filter(tp =>
+          tp.carimbos.some(carimbo => carimbo.categoria === 'Flexibilizado'),
+        ).length || 0,
+      naoExecutados:
+        tpsWithTag.filter(
+          tp => (tp.tag as ITPGroupItem['status']) === 'Não Executado',
+        ).length || 0,
+      fechados: {
+        total:
+          tpsWithTag?.filter(
+            tp => (tp.tag as ITPGroupItem['status']) === 'Fechado',
+          ).length || 0,
+        executados:
+          tpsWithTag?.filter(
+            tp =>
+              (tp.tag as ITPGroupItem['status']) === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Executado',
+          ).length || 0,
+        cancelados:
+          tpsWithTag?.filter(
+            tp =>
+              (tp.tag as ITPGroupItem['status']) === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Cancelado',
+          ).length || 0,
+        rollback:
+          tpsWithTag?.filter(
+            tp =>
+              (tp.tag as ITPGroupItem['status']) === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Rollback',
+          ).length || 0,
+        parcial:
+          tpsWithTag?.filter(
+            tp =>
+              (tp.tag as ITPGroupItem['status']) === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Parcial',
+          ).length || 0,
+        naoExecutado:
+          tpsWithTag?.filter(
+            tp =>
+              (tp.tag as ITPGroupItem['status']) === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Não Executado',
+          ).length || 0,
+        incidencia:
+          tpsWithTag?.filter(
+            tp =>
+              (tp.tag as ITPGroupItem['status']) === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Incidência',
+          ).length || 0,
+        naoClassificado:
+          tpsWithTag?.filter(
+            tp =>
+              (tp.tag as ITPGroupItem['status']) === 'Fechado' &&
+              tp.baixa.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa.carimbo?.categoria === 'Não Classificado',
+          ).length || 0,
+      },
     };
   }
 }

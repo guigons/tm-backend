@@ -6,7 +6,7 @@ import ShowChartService from '@modules/charts/services/ShowChartService';
 export default class ChartsController {
   public async show(request: Request, response: Response): Promise<Response> {
     const user_id = request.user.id;
-    const { template_id, chartPreference_id } = request.query;
+    const { template_id, chartPreference_id, maxGroupColumns } = request.query;
 
     const showChart = container.resolve(ShowChartService);
 
@@ -14,6 +14,7 @@ export default class ChartsController {
       user_id,
       template_id: new ObjectID(template_id.toString()),
       chartPreference_id: new ObjectID(chartPreference_id.toString()),
+      maxGroupColumns: Number(maxGroupColumns),
     });
 
     return response.json(chart);

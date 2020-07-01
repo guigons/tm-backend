@@ -14,10 +14,7 @@ class StampTypeCategoryCategoriesRepository
   public async create(
     stampTypeCategoryData: ICreateStampTypeCategoryDTO,
   ): Promise<StampTypeCategory> {
-    console.log('DATA', stampTypeCategoryData);
-
     const stampTypeCategory = this.ormRepository.create(stampTypeCategoryData);
-    console.log(stampTypeCategory);
 
     await this.ormRepository.save(stampTypeCategory);
 

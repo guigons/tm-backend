@@ -2,6 +2,7 @@ import { container } from 'tsyringe';
 
 import '../modules/TAs/providers';
 import '../modules/TPs/providers';
+import '../modules/stamps/providers';
 
 import SigitmGruposRepository from '../infra/typeorm/repositories/SigitmGruposRepository';
 import ISigitmGruposRepository from '../repositories/ISigitmGruposRepository';

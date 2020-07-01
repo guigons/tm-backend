@@ -7,8 +7,8 @@ import passwordRouter from '@modules/users/infra/http/routes/password.routes';
 import templatesRouter from '@modules/charts/infra/http/routes/templates.routes';
 import chartsRouter from '@modules/charts/infra/http/routes/charts.routes';
 import sigitmRouter from '@modules/sigitm/infra/http/routes/sigitm.routes';
-import stampTypesRouter from '@modules/stamps/infra/http/routes/stampTypes.routes';
-import stampsRouter from '@modules/stamps/infra/http/routes/stamps.routes';
+import stampTypesRouter from '@modules/sigitm/modules/stamps/infra/http/routes/stampTypes.routes';
+import stampsRouter from '@modules/sigitm/modules/stamps/infra/http/routes/stamps.routes';
 import tasRouter from '@modules/sigitm/modules/TAs/infra/http/routes/tas.routes';
 import tpsRouter from '@modules/sigitm/modules/TPs/infra/http/routes/tps.routes';
 

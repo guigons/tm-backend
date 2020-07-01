@@ -36,14 +36,9 @@ class StampsRepository implements IStampsRepository {
     return stamp;
   }
 
-  public async findByCod(
-    cod: string,
-    type_id: string,
-    category_id: string,
-  ): Promise<Stamp | undefined> {
+  public async findByCod(cod: string): Promise<Stamp | undefined> {
     const stamp = await this.ormRepository.findOne({
       cod,
-      type_id,
     });
 
     return stamp;

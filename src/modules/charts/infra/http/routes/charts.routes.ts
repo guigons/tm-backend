@@ -14,6 +14,7 @@ chartsRouter.get(
     [Segments.QUERY]: {
       template_id: Joi.string().required(),
       chartPreference_id: Joi.string().required(),
+      maxGroupColumns: Joi.number(),
     },
   }),
   chartsController.show,
