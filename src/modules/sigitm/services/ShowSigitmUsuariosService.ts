@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'tsyringe';
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
-import SigitmUsuario from '../infra/typeorm/entities/SigitmUsuario';
+import SigitmUsuario from '../infra/bridge/entities/SigitmUsuario';
 import ISigitmUsuariosRepository from '../repositories/ISigitmUsuariosRepository';
 
 interface IResponse {

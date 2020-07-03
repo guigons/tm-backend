@@ -4,9 +4,9 @@ import groupArray from 'group-array';
 import { injectable, inject } from 'tsyringe';
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
 import ISigitmGruposRepository from '@modules/sigitm/repositories/ISigitmGruposRepository';
-import IStampsRepository from '@modules/sigitm/modules/stamps/repositories/IStampsRepository';
+import IStampsRepository from '@modules/stamps/repositories/IStampsRepository';
 import ITPsRepository from '../repositories/ITPsRepository';
-import TP from '../infra/typeorm/entities/TP';
+import TP from '../infra/bridge/entities/TP';
 
 interface ITPGroupItem {
   status:
@@ -101,31 +101,16 @@ export default class LoadTPsGroupService {
   ) {}
 
   public async execute({ user_id }: IRequest): Promise<IResponse> {
-    const cacheKey = 'TPsGroups';
+    const cacheKey = 'TPsGroupss';
     let tps = await this.cacheProvider.recovery<TP[]>(cacheKey);
 
     if (!tps) {
-      tps = await this.TPsRepository.findByDataInicioPrevAndTipoRede(
-        {
-          daysBefore: 7,
-          daysAfter: 0,
-          tipoRede1: 304,
-          tipoRede2: 305,
-        },
-        {
-          select: ['id', 'dataInicioPrevisto'],
-          relations: [
-            'status',
-            'baixa',
-            'ciente',
-            'ciente.usuario',
-            'ciente.grupo',
-            'historicos',
-            'historicos.usuario',
-            'historicos.grupo',
-          ],
-        },
-      );
+      tps = await this.TPsRepository.findByDataInicioPrevAndTipoRede({
+        daysBefore: 7,
+        daysAfter: 0,
+        tipoRede1: 304,
+        tipoRede2: 305,
+      });
 
       const stamps = await this.stampsRepository.findAll();
       tps.forEach(tp => tp.setCarimbosDetails(stamps));

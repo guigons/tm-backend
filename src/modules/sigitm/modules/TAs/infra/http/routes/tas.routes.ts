@@ -11,7 +11,7 @@ tasRouter.use(ensureAuthenticated);
 
 tasRouter.get('/group', tasController.group);
 
-tasRouter.get(
+tasRouter.post(
   '/ids',
   celebrate({
     [Segments.BODY]: {

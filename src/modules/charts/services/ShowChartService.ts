@@ -5,9 +5,9 @@ import { injectable, inject } from 'tsyringe';
 import ITemplatesRepository from '@modules/charts/repositories/ITemplatesRepository';
 import { ChartData } from 'chart.js';
 import ITPsRepository from '@modules/sigitm/modules/TPs/repositories/ITPsRepository';
-import TP from '@modules/sigitm/modules/TPs/infra/typeorm/entities/TP';
+import TP from '@modules/sigitm/modules/TPs/infra/bridge/entities/TP';
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
-import IStampsRepository from '@modules/sigitm/modules/stamps/repositories/IStampsRepository';
+import IStampsRepository from '@modules/stamps/repositories/IStampsRepository';
 import { transparentize } from 'polished';
 import {
   format,
@@ -82,47 +82,16 @@ class ShowChartService {
     const now = new Date();
     const daysBefore = differenceInCalendarDays(now, chartPreference.start);
 
-    const cacheKey = `ChartTPs-${daysBefore}d`;
+    const cacheKey = `ChartTPs-${daysBefore}dddd`;
     let tps = await this.cacheProvider.recovery<TP[]>(cacheKey);
 
     if (!tps) {
-      tps = await this.TPsRepository.findByDataInicioPrevAndTipoRede(
-        {
-          daysBefore,
-          daysAfter: 0,
-          tipoRede1: 304,
-          tipoRede2: 305,
-        },
-        {
-          // tps = await this.TPsRepository.findByIds([5687935], {
-          relations: [
-            'status',
-            'impacto',
-            'atividade',
-            'rede',
-            'rede.tipo',
-            'tipoPlanta',
-            'tipoTrabalho',
-            'empresa',
-            'tipoAfetacao',
-            'motivo',
-            'criador',
-            'criadorGrupo',
-            'responsavel',
-            'fila',
-            'encerrador',
-            'encerradorGrupo',
-            'dadosIP',
-            'baixa',
-            'ciente',
-            'ciente.usuario',
-            'ciente.grupo',
-            'historicos',
-            'historicos.usuario',
-            'historicos.grupo',
-          ],
-        },
-      );
+      tps = await this.TPsRepository.findByDataInicioPrevAndTipoRede({
+        daysBefore,
+        daysAfter: 0,
+        tipoRede1: 304,
+        tipoRede2: 305,
+      });
 
       const stamps = await this.stampsRepository.findAll();
       tps.forEach(tp => tp.setCarimbosDetails(stamps));

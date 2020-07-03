@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'tsyringe';
-import TA from '../infra/typeorm/entities/TA';
+import TA from '../infra/bridge/entities/TA';
 import ITAsRepository from '../repositories/ITAsRepository';
 
 interface IRequest {
@@ -19,22 +19,7 @@ export default class LoadTADetailsService {
   ) {}
 
   public async execute({ id }: IRequest): Promise<IResponse> {
-    const ta = await this.TAsRepository.findById(id, {
-      relations: [
-        'responsavel',
-        'fila',
-        'criador',
-        'grupoCriador',
-        'status',
-        'rede',
-        'rede.tipo',
-        'dadosIP',
-        'baixa',
-        'historicos',
-        'historicos.usuario',
-        'historicos.grupo',
-      ],
-    });
+    const ta = await this.TAsRepository.findById(id);
     return { ta };
   }
 }

@@ -10,7 +10,7 @@ tpsRouter.use(ensureAuthenticated);
 
 tpsRouter.get('/group', tpsController.group);
 
-tpsRouter.get(
+tpsRouter.post(
   '/ids',
   celebrate({
     [Segments.BODY]: {

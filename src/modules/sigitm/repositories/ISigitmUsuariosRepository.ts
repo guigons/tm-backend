@@ -1,4 +1,4 @@
-import SigitmUsuario from '../infra/typeorm/entities/SigitmUsuario';
+import SigitmUsuario from '../infra/bridge/entities/SigitmUsuario';
 
 export default interface ISigitmUsuariosRepository {
   findAllActive(): Promise<SigitmUsuario[]>;

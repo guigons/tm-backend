@@ -1,5 +1,5 @@
 import { subDays, isAfter } from 'date-fns';
-import TP from '../../infra/typeorm/entities/TP';
+import TP from '../../infra/bridge/entities/TP';
 import ITPsRepository from '../ITPsRepository';
 import ILoadTPsGroupDTO from '../../dtos/ILoadTPsGroupDTO';
 

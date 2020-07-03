@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'tsyringe';
-import IStampsRepository from '@modules/sigitm/modules/stamps/repositories/IStampsRepository';
+import IStampsRepository from '@modules/stamps/repositories/IStampsRepository';
 import ITPsRepository from '../repositories/ITPsRepository';
-import TP from '../infra/typeorm/entities/TP';
+import TP from '../infra/bridge/entities/TP';
 
 interface IRequest {
   id: number;
@@ -23,34 +23,7 @@ export default class LoadTPDetailsService {
   ) {}
 
   public async execute({ id }: IRequest): Promise<IResponse> {
-    const tp = await this.TPsRepository.findById(id, {
-      relations: [
-        'status',
-        'impacto',
-        'atividade',
-        'rede',
-        'rede.tipo',
-        'tipoPlanta',
-        'tipoTrabalho',
-        'empresa',
-        'tipoAfetacao',
-        'motivo',
-        'criador',
-        'criadorGrupo',
-        'responsavel',
-        'fila',
-        'encerrador',
-        'encerradorGrupo',
-        'dadosIP',
-        'baixa',
-        'ciente',
-        'ciente.usuario',
-        'ciente.grupo',
-        'historicos',
-        'historicos.usuario',
-        'historicos.grupo',
-      ],
-    });
+    const tp = await this.TPsRepository.findById(id);
 
     if (!tp) return { tp: undefined };
 

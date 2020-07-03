@@ -1,5 +1,5 @@
 import ILoadTAsGroupDTO from '../../dtos/ILoadTAsGroupDTO';
-import TA from '../../infra/typeorm/entities/TA';
+import TA from '../../infra/bridge/entities/TA';
 import ITAsRepository from '../ITAsRepository';
 
 class FakeTAsRepository implements ITAsRepository {

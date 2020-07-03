@@ -1,4 +1,4 @@
-import SigitmGrupo from '../infra/typeorm/entities/SigitmGrupo';
+import SigitmGrupo from '../infra/bridge/entities/SigitmGrupo';
 
 export default interface ISigitmGruposRepository {
   findAllActive(): Promise<SigitmGrupo[]>;

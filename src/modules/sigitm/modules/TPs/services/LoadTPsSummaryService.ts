@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { injectable, inject } from 'tsyringe';
-import IStampsRepository from '@modules/sigitm/modules/stamps/repositories/IStampsRepository';
-import TP from '../infra/typeorm/entities/TP';
+import IStampsRepository from '@modules/stamps/repositories/IStampsRepository';
+import TP from '../infra/bridge/entities/TP';
 import ITPsRepository from '../repositories/ITPsRepository';
 
 interface IRequest {
@@ -23,20 +23,7 @@ export default class LoadTPsSummaryService {
   ) {}
 
   public async execute({ ids }: IRequest): Promise<IResponse> {
-    const tps = await this.TPsRepository.findByIds(ids, {
-      relations: [
-        'responsavel',
-        'fila',
-        'criador',
-        'criadorGrupo',
-        'ciente',
-        'ciente.usuario',
-        'ciente.grupo',
-        'historicos',
-        'historicos.usuario',
-        'historicos.grupo',
-      ],
-    });
+    const tps = await this.TPsRepository.findByIds(ids);
     const stamps = await this.stampsRepository.findAll();
     tps.forEach(tp => tp.setCarimbosDetails(stamps));
     return { tps };

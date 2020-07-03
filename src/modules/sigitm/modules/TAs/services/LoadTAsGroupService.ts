@@ -6,7 +6,7 @@ import groupArray from 'group-array';
 import { injectable, inject } from 'tsyringe';
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
 import ITAsRepository from '../repositories/ITAsRepository';
-import TA from '../infra/typeorm/entities/TA';
+import TA from '../infra/bridge/entities/TA';
 
 interface ITAGroupTag {
   [key: string]: {
