@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start:dev": "ts-node-dev -r tsconfig-paths/register --transpileOnly --ignore-watch node_modules src/shared/infra/http/server.ts",
-    "start:prod": "ts-node dist/shared/infra/http/server.js",
+    "start:prod": "ts-node --files -r tsconfig-paths/register dist/shared/infra/http/server.js",
     "typeorm": "ts-node-dev -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
     "test": "jest"
   },
