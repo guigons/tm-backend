@@ -101,7 +101,7 @@ export default class LoadTPsGroupService {
   ) {}
 
   public async execute({ user_id }: IRequest): Promise<IResponse> {
-    const cacheKey = 'TPsGroupss';
+    const cacheKey = 'TPsGroupsSSSSSSA';
     let tps = await this.cacheProvider.recovery<TP[]>(cacheKey);
 
     if (!tps) {

@@ -19,6 +19,12 @@ class UserPreferenceFilaTAs {
   end: Date;
 
   @Column()
+  period: string;
+
+  @Column()
+  amount: number;
+
+  @Column()
   horizontal: string;
 
   @Column()

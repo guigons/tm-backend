@@ -13,7 +13,20 @@ import {
   format,
   differenceInCalendarDays,
   eachDayOfInterval,
+  eachWeekOfInterval,
   isSameDay,
+  isSameWeek,
+  isSameMonth,
+  subDays,
+  subWeeks,
+  subMonths,
+  endOfToday,
+  endOfDay,
+  startOfDay,
+  endOfYesterday,
+  endOfWeek,
+  endOfMonth,
+  eachMonthOfInterval,
 } from 'date-fns';
 import Color from '../utils/Colors';
 import { groupArray, filterByTemplate } from '../utils/Array';
@@ -79,16 +92,42 @@ class ShowChartService {
       throw new AppError('Template not found');
     }
 
+    let start;
+    let end;
+    let expire = 24 * 3600;
     const now = new Date();
-    const daysBefore = differenceInCalendarDays(now, chartPreference.start);
+    if (chartPreference.period === 'specific') {
+      start = startOfDay(chartPreference.start);
+      end = endOfDay(chartPreference.end);
+    } else if (chartPreference.period === 'last_days') {
+      end = endOfYesterday();
+      start = subDays(end, chartPreference.amount);
+      expire = 24 * 3600;
+    } else if (chartPreference.period === 'last_weeks') {
+      end = subWeeks(endOfWeek(now), 1);
+      start = subWeeks(end, chartPreference.amount);
+      expire = 24 * 3600;
+    } else if (chartPreference.period === 'last_months') {
+      end = subMonths(endOfMonth(now), 1);
+      start = subMonths(end, chartPreference.amount);
+      expire = 3 * 24 * 3600;
+    } else {
+      start = subDays(endOfToday(), 7);
+      end = endOfToday();
+    }
 
-    const cacheKey = `ChartTPs-${daysBefore}dddd`;
+    console.log(start, end);
+
+    const cacheKey = `TPsChartssss-${start.toDateString()}-${end.toDateString()}`;
+    const daysBefore = differenceInCalendarDays(endOfToday(), start);
+    const daysAfter = differenceInCalendarDays(endOfToday(), end);
+
     let tps = await this.cacheProvider.recovery<TP[]>(cacheKey);
 
     if (!tps) {
       tps = await this.TPsRepository.findByDataInicioPrevAndTipoRede({
         daysBefore,
-        daysAfter: 0,
+        daysAfter,
         tipoRede1: 304,
         tipoRede2: 305,
       });
@@ -96,7 +135,7 @@ class ShowChartService {
       const stamps = await this.stampsRepository.findAll();
       tps.forEach(tp => tp.setCarimbosDetails(stamps));
 
-      this.cacheProvider.save({ key: cacheKey, value: tps, expire: 24 * 3600 });
+      this.cacheProvider.save({ key: cacheKey, value: tps, expire });
     }
 
     const tpsFiltered = filterByTemplate(tps, template);
@@ -144,12 +183,32 @@ class ShowChartService {
         });
       }
     } else if (chartPreference.horizontal === 'date') {
-      const days = eachDayOfInterval({
-        start: chartPreference.start,
-        end: chartPreference.end,
-      });
+      let intervals: Date[] = [];
 
-      chartData.labels = days.map(day => format(day, 'dd-MMM'));
+      if (chartPreference.period === 'last_days') {
+        intervals = eachDayOfInterval({
+          start,
+          end,
+        });
+      }
+
+      if (chartPreference.period === 'last_weeks') {
+        intervals = eachWeekOfInterval({
+          start,
+          end,
+        });
+      }
+
+      if (chartPreference.period === 'last_months') {
+        intervals = eachMonthOfInterval({
+          start,
+          end,
+        });
+      }
+      intervals = intervals.splice(1, intervals.length);
+      console.log(intervals);
+
+      chartData.labels = intervals.map(interval => format(interval, 'dd-MMM'));
 
       Object.keys(tpsGrouping).forEach(label => {
         if (chartData.datasets) {
@@ -161,11 +220,26 @@ class ShowChartService {
             borderWidth: 1,
             hoverBackgroundColor: transparentize(0.6, color),
             hoverBorderColor: color,
-            data: days.map(
-              day =>
-                tpsGrouping[label]?.filter(tp =>
-                  isSameDay(new Date(tp.dataInicioPrevisto), day),
-                ).length,
+            data: intervals.map(
+              interval =>
+                tpsGrouping[label]?.filter(tp => {
+                  if (chartPreference.period === 'last_days') {
+                    return isSameDay(new Date(tp.dataInicioPrevisto), interval);
+                  }
+                  if (chartPreference.period === 'last_weeks') {
+                    return isSameWeek(
+                      new Date(tp.dataInicioPrevisto),
+                      interval,
+                    );
+                  }
+                  if (chartPreference.period === 'last_months') {
+                    return isSameMonth(
+                      new Date(tp.dataInicioPrevisto),
+                      interval,
+                    );
+                  }
+                  return false;
+                }).length,
             ),
           });
         }

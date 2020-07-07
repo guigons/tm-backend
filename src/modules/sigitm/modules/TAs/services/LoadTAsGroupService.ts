@@ -58,7 +58,7 @@ export default class LoadTAsGroupService {
   ) {}
 
   public async execute({ user_id }: IRequest): Promise<IResponse> {
-    const cacheKey = 'TAs';
+    const cacheKey = 'TAs ss';
     let tas = await this.cacheProvider.recovery<TA[]>(cacheKey);
 
     if (!tas) {
