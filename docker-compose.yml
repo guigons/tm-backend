@@ -7,7 +7,7 @@ services:
     volumes:
       - tm-data:/data
     ports:
-      - '${TM_DB_PORT}:${TM_DB_PORT}'
+      - '${TM_DB_PORT}:5432'
     networks:
       - tm-network
     environment:
@@ -20,7 +20,7 @@ services:
     volumes:
       - tm-data:/data
     ports:
-      - '${TM_MONGO_DB_PORT}:${TM_MONGO_DB_PORT}'
+      - '${TM_MONGO_DB_PORT}:27017'
     networks:
       - tm-network
     environment:
@@ -32,7 +32,7 @@ services:
     volumes:
       - tm-data:/data
     ports:
-      - '${REDIS_DB_PORT}:${REDIS_DB_PORT}'
+      - '${REDIS_DB_PORT}:6379'
     networks:
       - tm-network
 volumes:
