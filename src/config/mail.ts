@@ -1,7 +1,7 @@
 interface IMailConfig {
-  driver: 'ethereal';
+  driver: 'ethereal' | 'vivo';
 }
 
 export default {
-  driver: process.env.MAIL_DRIVER || 'ethereal',
+  driver: process.env.MAIL_DRIVER || 'vivo',
 } as IMailConfig;
