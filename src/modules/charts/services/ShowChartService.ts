@@ -116,8 +116,6 @@ class ShowChartService {
       end = endOfToday();
     }
 
-    console.log(start, end);
-
     const cacheKey = `TPsChartssss-${start.toDateString()}-${end.toDateString()}`;
     const daysBefore = differenceInCalendarDays(endOfToday(), start);
     const daysAfter = differenceInCalendarDays(endOfToday(), end);
@@ -206,7 +204,6 @@ class ShowChartService {
         });
       }
       intervals = intervals.splice(1, intervals.length);
-      console.log(intervals);
 
       chartData.labels = intervals.map(interval => format(interval, 'dd-MMM'));
 

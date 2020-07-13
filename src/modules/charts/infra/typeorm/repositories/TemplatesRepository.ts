@@ -56,14 +56,35 @@ class TemplatesRepository implements ITemplatesRepository {
     template_id,
   }: IFindTemplateDTO): Promise<Template | undefined> {
     const template = await this.ormRepository.findOne({
-      _id: template_id,
-      user_id,
+      where: {
+        $or: [
+          {
+            _id: template_id,
+            user_id,
+          },
+          {
+            _id: template_id,
+            global: true,
+          },
+        ],
+      },
     });
     return template;
   }
 
   public async findTemplatesAndGlobals(user_id: string): Promise<Template[]> {
-    const templates = await this.ormRepository.find({ where: { user_id } });
+    const templates = await this.ormRepository.find({
+      where: {
+        $or: [
+          {
+            user_id,
+          },
+          {
+            global: true,
+          },
+        ],
+      },
+    });
     return templates;
   }
 
