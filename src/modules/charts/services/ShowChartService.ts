@@ -205,7 +205,13 @@ class ShowChartService {
       }
       intervals = intervals.splice(1, intervals.length);
 
-      chartData.labels = intervals.map(interval => format(interval, 'dd-MMM'));
+      if (chartPreference.period === 'last_months') {
+        chartData.labels = intervals.map(interval => format(interval, 'MMM'));
+      } else {
+        chartData.labels = intervals.map(interval =>
+          format(interval, 'dd-MMM'),
+        );
+      }
 
       Object.keys(tpsGrouping).forEach(label => {
         if (chartData.datasets) {

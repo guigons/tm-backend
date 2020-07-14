@@ -58,7 +58,7 @@ export default class LoadTAsGroupService {
   ) {}
 
   public async execute({ user_id }: IRequest): Promise<IResponse> {
-    const cacheKey = 'TAs ss';
+    const cacheKey = 'TAs';
     let tas = await this.cacheProvider.recovery<TA[]>(cacheKey);
 
     if (!tas) {
@@ -92,11 +92,18 @@ export default class LoadTAsGroupService {
 
     const filas_ids = preferences?.filas_tas.map(fta => Number(fta.filaId));
 
+    console.log('filas_ids', filas_ids);
+
     const filas = await this.sigitmGruposRepository.findByIds(filas_ids || []);
 
-    const tasFiltered = tas.filter(
-      ta => ta.fila && filas_ids?.length && filas_ids.includes(ta.fila.id),
-    );
+    const tasFiltered = tas.filter(ta => {
+      // if (ta.fila && ta.fila.id === 1335) {
+      console.log(ta.fila ? ta.fila.id : null);
+      // }
+      return ta.fila && filas_ids?.length && filas_ids.includes(ta.fila.id);
+    });
+
+    console.log(tasFiltered.length);
 
     const tasWithTag = tasFiltered.map(ta => {
       const taDataCricao = new Date(ta.dataCriacao);
