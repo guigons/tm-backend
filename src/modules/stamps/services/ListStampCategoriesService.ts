@@ -1,6 +1,6 @@
 import { injectable, inject } from 'tsyringe';
 import IStampTypeCategoriesRepository from '../repositories/IStampTypeCategoriesRepository';
-import StampType from '../infra/typeorm/entities/StampType';
+import StampTypeCategory from '../infra/typeorm/entities/StampTypeCategory';
 
 @injectable()
 class ListStampCategories {
@@ -9,10 +9,10 @@ class ListStampCategories {
     private stampTypeCategoriesRepository: IStampTypeCategoriesRepository,
   ) {}
 
-  public async execute(): Promise<StampType[]> {
-    const stampsCategories = await this.stampTypeCategoriesRepository.findAll();
+  public async execute(): Promise<StampTypeCategory[]> {
+    const stampTypeCategories = await this.stampTypeCategoriesRepository.findAll();
 
-    return stampsCategories;
+    return stampTypeCategories;
   }
 }
 

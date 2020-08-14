@@ -24,6 +24,14 @@ stampsRouter.post(
   stampsController.create,
 );
 
-stampsRouter.delete('/:id', stampsController.destroy);
+stampsRouter.delete(
+  '/:id',
+  celebrate({
+    [Segments.PARAMS]: {
+      id: Joi.string().uuid().required(),
+    },
+  }),
+  stampsController.destroy,
+);
 
 export default stampsRouter;

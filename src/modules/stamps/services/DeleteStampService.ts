@@ -1,4 +1,5 @@
 import { injectable, inject } from 'tsyringe';
+import AppError from '@shared/errors/AppError';
 import IStampsRepository from '../repositories/IStampsRepository';
 
 interface IRequest {
@@ -13,6 +14,10 @@ class DeleteStamp {
   ) {}
 
   public async execute({ id }: IRequest): Promise<void> {
+    const checkStampExists = await this.stampsRepository.findById(id);
+    if (!checkStampExists) {
+      throw new AppError('Stamp not found.');
+    }
     await this.stampsRepository.remove(id);
   }
 }

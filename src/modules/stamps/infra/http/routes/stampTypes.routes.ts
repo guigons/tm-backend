@@ -33,6 +33,40 @@ stampTypesRouter.post(
   stampTypesController.create,
 );
 
-stampTypesRouter.delete('/:id', stampTypesController.destroy);
+stampTypesRouter.delete(
+  '/:id',
+  celebrate({
+    [Segments.PARAMS]: {
+      id: Joi.string().uuid().required(),
+    },
+  }),
+  stampTypesController.destroy,
+);
+
+stampTypesRouter.patch(
+  '/:template_id',
+  celebrate({
+    [Segments.PARAMS]: {
+      template_id: Joi.string().uuid().required(),
+    },
+    [Segments.BODY]: {
+      id: Joi.string().uuid(),
+      name: Joi.string().allow('', null),
+      categories: Joi.array().items({
+        id: Joi.string().uuid(),
+        name: Joi.string().allow('', null),
+        type_id: Joi.string().uuid(),
+        stamps: Joi.array().items({
+          id: Joi.string().uuid(),
+          cod: Joi.string().allow('', null),
+          description: Joi.string().allow('', null),
+          type_id: Joi.string().uuid(),
+          category_id: Joi.string().uuid(),
+        }),
+      }),
+    },
+  }),
+  stampTypesController.update,
+);
 
 export default stampTypesRouter;

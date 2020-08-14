@@ -22,6 +22,14 @@ stampTypeCategoriesRouter.post(
   stampTypeCategoriesController.create,
 );
 
-stampTypeCategoriesRouter.delete('/:id', stampTypeCategoriesController.destroy);
+stampTypeCategoriesRouter.delete(
+  '/:id',
+  celebrate({
+    [Segments.PARAMS]: {
+      id: Joi.string().uuid().required(),
+    },
+  }),
+  stampTypeCategoriesController.destroy,
+);
 
 export default stampTypeCategoriesRouter;

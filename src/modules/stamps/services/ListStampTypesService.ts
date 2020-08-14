@@ -10,9 +10,9 @@ class ListStampTypesService {
   ) {}
 
   public async execute(): Promise<StampType[]> {
-    const stamps = await this.stampTypesRepository.findAll();
+    const stampTypes = await this.stampTypesRepository.findAll();
 
-    return stamps;
+    return stampTypes;
   }
 }
 

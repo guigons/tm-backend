@@ -143,7 +143,6 @@ export default class TP {
       const stampBaixa = stamps.find(
         s => this.baixa.carimbo && s.cod === this.baixa.carimbo.codigo,
       );
-      console.log(stampBaixa);
       this.baixa.carimbo = {
         ...this.baixa.carimbo,
         tipo: stampBaixa ? stampBaixa.type.name : 'Pré-Baixa',

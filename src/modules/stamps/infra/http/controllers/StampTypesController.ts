@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { container } from 'tsyringe';
 import CreateStampTypeService from '../../../services/CreateStampTypeService';
 import ListStampTypesService from '../../../services/ListStampTypesService';
-import DeleteStampService from '../../../services/DeleteStampService';
+import DeleteStampTypeService from '../../../services/DeleteStampTypeService';
+import UpdateStampTypeService from '../../../services/UpdateStampTypeService';
 
 export default class StampTypesController {
   public async index(request: Request, response: Response): Promise<Response> {
@@ -26,15 +27,29 @@ export default class StampTypesController {
     return response.json(stampType);
   }
 
+  public async update(request: Request, response: Response): Promise<Response> {
+    const { id } = request.params;
+    const { name } = request.body;
+
+    const updateStampType = container.resolve(UpdateStampTypeService);
+
+    const stampType = await updateStampType.execute({
+      id,
+      name,
+    });
+
+    return response.json(stampType);
+  }
+
   public async destroy(
     request: Request,
     response: Response,
   ): Promise<Response> {
     const { id } = request.params;
 
-    const deleteStamp = container.resolve(DeleteStampService);
+    const deleteStampType = container.resolve(DeleteStampTypeService);
 
-    await deleteStamp.execute({ id });
+    await deleteStampType.execute({ id });
 
     return response.status(204).json();
   }

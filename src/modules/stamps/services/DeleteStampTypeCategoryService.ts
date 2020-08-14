@@ -1,4 +1,5 @@
 import { injectable, inject } from 'tsyringe';
+import AppError from '@shared/errors/AppError';
 import IStampTypeCategoriesRepository from '../repositories/IStampTypeCategoriesRepository';
 
 interface IRequest {
@@ -13,6 +14,12 @@ class DeleteStampTypeCategoryService {
   ) {}
 
   public async execute({ id }: IRequest): Promise<void> {
+    const checkStampTypeCategoryExists = await this.stampTypeCategoriesRepository.findById(
+      id,
+    );
+    if (!checkStampTypeCategoryExists) {
+      throw new AppError('Stamp Type Category not found.');
+    }
     await this.stampTypeCategoriesRepository.remove(id);
   }
 }

@@ -14,10 +14,9 @@ class DeleteStampTypeService {
   ) {}
 
   public async execute({ id }: IRequest): Promise<void> {
-    console.log('DELE', id);
     const checkStampTypeExists = await this.stampTypesRepository.findById(id);
     if (!checkStampTypeExists) {
-      throw new AppError('Stamp Type not found');
+      throw new AppError('Stamp Type not found.');
     }
     await this.stampTypesRepository.remove(id);
   }
