@@ -27,6 +27,13 @@ class StampTypeCategoryCategoriesRepository
     return this.ormRepository.save(stampTypeCategory);
   }
 
+  public async findAll(): Promise<StampTypeCategory[]> {
+    const stampTypeCategories = await this.ormRepository.find({
+      relations: ['stamps'],
+    });
+    return stampTypeCategories;
+  }
+
   public async findById(id: string): Promise<StampTypeCategory | undefined> {
     const stampTypeCategory = await this.ormRepository.findOne(id);
 

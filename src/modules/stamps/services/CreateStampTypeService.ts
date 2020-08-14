@@ -4,6 +4,7 @@ import IStampTypesRepository from '../repositories/IStampTypesRepository';
 import StampType from '../infra/typeorm/entities/StampType';
 
 interface IRequest {
+  id: string;
   name: string;
 }
 
@@ -14,7 +15,7 @@ class CreateStampTypeService {
     private stampTypesRepository: IStampTypesRepository,
   ) {}
 
-  public async execute({ name }: IRequest): Promise<StampType> {
+  public async execute({ id, name }: IRequest): Promise<StampType> {
     const checkStampTypeExists = await this.stampTypesRepository.findByName(
       name,
     );
@@ -23,6 +24,7 @@ class CreateStampTypeService {
     }
 
     const stampType = await this.stampTypesRepository.create({
+      id,
       name,
     });
 

@@ -2,9 +2,10 @@ import { injectable, inject } from 'tsyringe';
 import AppError from '@shared/errors/AppError';
 import IStampTypeCategoriesRepository from '../repositories/IStampTypeCategoriesRepository';
 import IStampTypesRepository from '../repositories/IStampTypesRepository';
-import StampType from '../infra/typeorm/entities/StampType';
+import StampTypeCategory from '../infra/typeorm/entities/StampTypeCategory';
 
 interface IRequest {
+  id: string;
   name: string;
   type_id: string;
 }
@@ -19,7 +20,11 @@ class CreateStampTypeCategoryService {
     private stampTypeCategoriesRepository: IStampTypeCategoriesRepository,
   ) {}
 
-  public async execute({ name, type_id }: IRequest): Promise<StampType> {
+  public async execute({
+    id,
+    name,
+    type_id,
+  }: IRequest): Promise<StampTypeCategory> {
     const checkStampTypeCategoryExists = await this.stampTypeCategoriesRepository.findByName(
       name,
       type_id,
@@ -34,6 +39,7 @@ class CreateStampTypeCategoryService {
     }
 
     const stampTypeCategory = await this.stampTypeCategoriesRepository.create({
+      id,
       name,
       type_id,
     });

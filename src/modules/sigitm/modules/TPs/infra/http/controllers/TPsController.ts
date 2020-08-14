@@ -29,9 +29,14 @@ export default class TasController {
 
   public async group(request: Request, response: Response): Promise<Response> {
     const user_id = request.user.id;
+    const { daysBefore } = request.query;
     const loadTPsGroup = container.resolve(LoadTPsGroupService);
 
-    const group = await loadTPsGroup.execute({ user_id });
+    // console.log(daysBefore);
+    const group = await loadTPsGroup.execute({
+      user_id,
+      daysBefore: Number(daysBefore),
+    });
 
     return response.json(group);
   }

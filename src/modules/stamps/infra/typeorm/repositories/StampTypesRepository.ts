@@ -22,6 +22,13 @@ class StampTypesRepository implements IStampTypesRepository {
     return this.ormRepository.save(stampType);
   }
 
+  public async findAll(): Promise<StampType[]> {
+    const stampTypes = await this.ormRepository.find({
+      relations: ['categories', 'categories.stamps'],
+    });
+    return stampTypes;
+  }
+
   public async findById(id: string): Promise<StampType | undefined> {
     const stampType = await this.ormRepository.findOne(id);
 

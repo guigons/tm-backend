@@ -6,6 +6,7 @@ import IStampTypeCategoriesRepository from '../repositories/IStampTypeCategories
 import Stamp from '../infra/typeorm/entities/Stamp';
 
 interface IRequest {
+  id: string;
   cod: string;
   description: string;
   type_id: string;
@@ -26,6 +27,7 @@ class CreateStampService {
   ) {}
 
   public async execute({
+    id,
     cod,
     description,
     type_id,
@@ -49,6 +51,7 @@ class CreateStampService {
     }
 
     const stamp = await this.stampsRepository.create({
+      id,
       cod,
       description,
       type_id,

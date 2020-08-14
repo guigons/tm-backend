@@ -8,7 +8,15 @@ const tpsController = new TPsController();
 
 tpsRouter.use(ensureAuthenticated);
 
-tpsRouter.get('/group', tpsController.group);
+tpsRouter.get(
+  '/group',
+  celebrate({
+    [Segments.QUERY]: {
+      daysBefore: Joi.number().required(),
+    },
+  }),
+  tpsController.group,
+);
 
 tpsRouter.post(
   '/ids',
