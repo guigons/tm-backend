@@ -13,6 +13,7 @@ tpsRouter.get(
   celebrate({
     [Segments.QUERY]: {
       daysBefore: Joi.number().required(),
+      daysAfter: Joi.number().required(),
     },
   }),
   tpsController.group,

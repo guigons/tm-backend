@@ -74,6 +74,7 @@ interface ITPGroupArray {
 interface IRequest {
   user_id: string;
   daysBefore: number;
+  daysAfter: number;
 }
 
 interface IResponse {
@@ -137,14 +138,18 @@ export default class LoadTPsGroupService {
     private stampsRepository: IStampsRepository,
   ) {}
 
-  public async execute({ user_id, daysBefore }: IRequest): Promise<IResponse> {
-    const cacheKey = `TPsGroups-${daysBefore}d`;
+  public async execute({
+    user_id,
+    daysBefore,
+    daysAfter,
+  }: IRequest): Promise<IResponse> {
+    const cacheKey = `TPsGroups-${daysBefore}-${daysBefore}d`;
     let tps = await this.cacheProvider.recovery<TP[]>(cacheKey);
 
     if (!tps) {
       tps = await this.TPsRepository.findByDataInicioPrevAndTipoRede({
         daysBefore,
-        daysAfter: 0,
+        daysAfter,
         tipoRede1: 304,
         tipoRede2: 305,
       });
