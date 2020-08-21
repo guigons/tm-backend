@@ -1,3 +1,4 @@
+import groupArrayLib from 'group-array';
 import AppError from '@shared/errors/AppError';
 import IUserPreferencesRepository from '@modules/users/repositories/IUserPreferencesRepository';
 import { ObjectID } from 'mongodb';
@@ -17,6 +18,7 @@ import {
   isSameDay,
   isSameWeek,
   isSameMonth,
+  isWithinInterval,
   subDays,
   subWeeks,
   subMonths,
@@ -92,8 +94,8 @@ class ShowChartService {
       throw new AppError('Template not found');
     }
 
-    let start;
-    let end;
+    let start: Date;
+    let end: Date;
     let expire = 24 * 3600;
     const now = new Date();
     if (chartPreference.period === 'specific') {
@@ -116,7 +118,7 @@ class ShowChartService {
       end = endOfToday();
     }
 
-    const cacheKey = `TPsChartssss-${start.toDateString()}-${end.toDateString()}`;
+    const cacheKey = `TPsCharts-${start.toDateString()}-${end.toDateString()}t`;
     const daysBefore = differenceInCalendarDays(endOfToday(), start);
     const daysAfter = differenceInCalendarDays(endOfToday(), end);
 
@@ -136,7 +138,24 @@ class ShowChartService {
       this.cacheProvider.save({ key: cacheKey, value: tps, expire });
     }
 
-    const tpsFiltered = filterByTemplate(tps, template);
+    const tpsWithinInterval = tps.filter(tp =>
+      isWithinInterval(new Date(tp.dataInicioPrevisto), {
+        start,
+        end,
+      }),
+    );
+
+    const tpsFiltered = filterByTemplate(tpsWithinInterval, template);
+
+    const tpsWithTag = tpsFiltered.map(tp =>
+      Object.assign(tp, {
+        ...tp,
+        tagProjectPerDay: `${tp.projeto}-${format(
+          new Date(tp.dataInicioPrevisto),
+          'dd/MMM/uuuu',
+        )}`,
+      }),
+    );
 
     const chartData: ChartData = { labels: [], datasets: [] };
 
@@ -144,22 +163,25 @@ class ShowChartService {
 
     if (chartPreference.groupBy && chartPreference.groupBy !== 'nao_agrupar') {
       tpsGrouping = groupArray(
-        tpsFiltered,
+        tpsWithTag,
         chartPreference.groupBy,
       ) as ITPGroupArray;
     } else {
       tpsGrouping = {
-        Qtde: tpsFiltered,
+        Qtde: tpsWithTag,
       };
     }
 
     const colors = new Color();
 
     if (chartPreference.horizontal === 'grouping') {
-      const counters = Object.keys(tpsGrouping).map(groupName => ({
-        groupName,
-        count: tpsGrouping[groupName].length,
-      }));
+      const counters = Object.keys(tpsGrouping).map(groupName => {
+        const group = groupArrayLib(tpsGrouping[groupName], 'tagProjectPerDay');
+        return {
+          groupName,
+          count: Object.keys(group).length,
+        };
+      });
 
       const sortable = counters
         .sort((a, b) => {
@@ -223,27 +245,22 @@ class ShowChartService {
             borderWidth: 1,
             hoverBackgroundColor: transparentize(0.6, color),
             hoverBorderColor: color,
-            data: intervals.map(
-              interval =>
-                tpsGrouping[label]?.filter(tp => {
-                  if (chartPreference.period === 'last_days') {
-                    return isSameDay(new Date(tp.dataInicioPrevisto), interval);
-                  }
-                  if (chartPreference.period === 'last_weeks') {
-                    return isSameWeek(
-                      new Date(tp.dataInicioPrevisto),
-                      interval,
-                    );
-                  }
-                  if (chartPreference.period === 'last_months') {
-                    return isSameMonth(
-                      new Date(tp.dataInicioPrevisto),
-                      interval,
-                    );
-                  }
-                  return false;
-                }).length,
-            ),
+            data: intervals.map(interval => {
+              const filtered = tpsGrouping[label]?.filter(tp => {
+                if (chartPreference.period === 'last_days') {
+                  return isSameDay(new Date(tp.dataInicioPrevisto), interval);
+                }
+                if (chartPreference.period === 'last_weeks') {
+                  return isSameWeek(new Date(tp.dataInicioPrevisto), interval);
+                }
+                if (chartPreference.period === 'last_months') {
+                  return isSameMonth(new Date(tp.dataInicioPrevisto), interval);
+                }
+                return false;
+              });
+              const group = groupArrayLib(filtered, 'tagProjectPerDay');
+              return Object.keys(group).length;
+            }),
           });
         }
       });

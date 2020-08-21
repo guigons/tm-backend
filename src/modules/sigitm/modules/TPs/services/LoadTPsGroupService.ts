@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable no-return-assign */
 import IUserPreferencesRepository from '@modules/users/repositories/IUserPreferencesRepository';
 import 'reflect-metadata';
 import groupArray from 'group-array';
@@ -5,6 +7,7 @@ import { injectable, inject } from 'tsyringe';
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
 import ISigitmGruposRepository from '@modules/sigitm/repositories/ISigitmGruposRepository';
 import IStampsRepository from '@modules/stamps/repositories/IStampsRepository';
+import { format } from 'date-fns';
 import ITPsRepository from '../repositories/ITPsRepository';
 import TP from '../infra/bridge/entities/TP';
 
@@ -15,77 +18,54 @@ interface IRequest {
 }
 
 interface ICounter {
-  count: number;
+  numberOfProjects: number;
   ids: number[];
 }
 
-interface ITPGroupItem {
-  status:
-    | 'Aprovação'
-    | 'Autorizado'
-    | 'Em Execução'
-    | 'Fora do Prazo'
-    | 'Pré-baixa'
-    | 'Cancelado'
-    | 'Fechado'
-    | 'Não Executado';
-  count: number;
-  ids: number[];
+interface ITPCounter {
+  total: ICounter;
+  pendentePermissao: ICounter;
+  pendenteOM: ICounter;
+  aprovacao: ICounter;
+  autorizados: ICounter;
+  emExecucao: ICounter;
+  foraDoPrazo: ICounter;
+  preBaixa: ICounter;
+  cancelados: ICounter;
+  fechados: ICounter;
+  naoExecutados: ICounter;
+  devolvidos: ICounter;
+  flexibilizados: ICounter;
+  posJanela: {
+    total: ICounter;
+    executados: ICounter;
+    cancelados: ICounter;
+    rollback: ICounter;
+    parcial: ICounter;
+    naoExecutado: ICounter;
+    incidencia: ICounter;
+    naoClassificado: ICounter;
+  };
 }
 
 interface ITPGroup {
   grupoResponsavel: string;
-  data: ITPGroupItem[] | [];
-  total: ICounter;
-  aprovacao: ICounter;
-  autorizados: ICounter;
-  emExecucao: ICounter;
-  foraDoPrazo: ICounter;
-  preBaixa: ICounter;
-  cancelados: ICounter;
-  devolvidos: ICounter;
-  flexibilizados: ICounter;
-  naoExecutados: ICounter;
-  posJanela: {
-    executados: ICounter;
-    cancelados: ICounter;
-    rollback: ICounter;
-    parcial: ICounter;
-    naoExecutado: ICounter;
-    incidencia: ICounter;
-    naoClassificado: ICounter;
-    total: ICounter;
-  };
+  counters: ITPCounter;
 }
 
 interface ITPGroupArray {
-  [key: string]: {
-    [key: string]: TP[];
-  };
+  [key: string]: TP[];
 }
 
 interface IResponse {
   groups: ITPGroup[];
-  total: ICounter;
-  aprovacao: ICounter;
-  autorizados: ICounter;
-  emExecucao: ICounter;
-  foraDoPrazo: ICounter;
-  preBaixa: ICounter;
-  cancelados: ICounter;
-  devolvidos: ICounter;
-  flexibilizados: ICounter;
-  naoExecutados: ICounter;
-  posJanela: {
-    executados: ICounter;
-    cancelados: ICounter;
-    rollback: ICounter;
-    parcial: ICounter;
-    naoExecutado: ICounter;
-    incidencia: ICounter;
-    naoClassificado: ICounter;
-    total: ICounter;
-  };
+  counters: ITPCounter;
+}
+
+interface IGetCountersTPsParams {
+  groupName: string;
+  statusName?: string;
+  stamp?: { type?: string; category?: string };
 }
 
 @injectable()
@@ -112,8 +92,8 @@ export default class LoadTPsGroupService {
     daysBefore,
     daysAfter,
   }: IRequest): Promise<IResponse> {
-    const cacheKey = `TPsGroups-${daysBefore}-${daysBefore}d`;
-    let tps; // await this.cacheProvider.recovery<TP[]>(cacheKey);
+    const cacheKey = `TPsGroups-${daysBefore}-${daysBefore}ddd`;
+    let tps = await this.cacheProvider.recovery<TP[]>(cacheKey);
 
     if (!tps) {
       tps = await this.TPsRepository.findByDataInicioPrevAndTipoRede({
@@ -146,22 +126,11 @@ export default class LoadTPsGroupService {
       );
     });
 
-    const status: ITPGroupItem['status'][] = [
-      'Aprovação',
-      'Autorizado',
-      'Em Execução',
-      'Fora do Prazo',
-      'Pré-baixa',
-      'Cancelado',
-      'Fechado',
-      'Não Executado',
-    ];
-
     const tpsWithTag = tpsFiltered.map(tp => {
       let tagStatus = 'untagged';
       if (
-        tp.status.nome === 'Pendente Permissão' ||
-        tp.status.nome === 'Pendente O&M' ||
+        // tp.status.nome === 'Pendente Permissão' ||
+        // tp.status.nome === 'Pendente O&M' ||
         tp.status.nome === 'Pendente GMUD' ||
         tp.status.nome === 'Pré-aprovado' ||
         tp.status.nome === 'Levantamento Campo' ||
@@ -175,507 +144,206 @@ export default class LoadTPsGroupService {
       return {
         ...tp,
         tagStatus,
-        tagProjectPerDay: `${tp.projeto}-${tp.dataInicioPrevisto}`,
+        tagProjectPerDay: `${tp.projeto}-${format(
+          new Date(tp.dataInicioPrevisto),
+          'dd/MMM/uuuu',
+        )}`,
       };
     });
 
-    const tpsGroup: ITPGroupArray = groupArray(
-      tpsWithTag,
-      'ciente.grupo.nome',
-      'tagStatus',
-    ) as ITPGroupArray;
+    const getCountersTPs = (fnFilter: (tp: TP) => {}): ICounter => {
+      const filtered = tpsWithTag.filter(tp => fnFilter(Object.assign(tp)));
+      const group = groupArray(filtered, 'tagProjectPerDay') as ITPGroupArray;
+
+      return {
+        numberOfProjects: Object.entries(group).length,
+        ids: Object.entries(group).reduce(
+          (acc, [, listOfTPs]) => acc.concat(listOfTPs.map(tp => tp.id)),
+          [] as number[],
+        ),
+      };
+    };
 
     const groups = filas.map(fila => ({
       grupoResponsavel: fila.nome,
-      data: status.map(s => ({
-        status: s,
-        count:
-          tpsGroup[fila.nome] && tpsGroup[fila.nome][s]
-            ? tpsGroup[fila.nome][s].length
-            : 0,
-        ids:
-          tpsGroup[fila.nome] && tpsGroup[fila.nome][s]
-            ? tpsGroup[fila.nome][s].map(tp => tp.id)
-            : [],
-      })),
-      total: {
-        count:
-          tpsWithTag?.filter(
+      counters: {
+        total: getCountersTPs(tp => tp.ciente.grupo.id === fila.id),
+        pendentePermissao: getCountersTPs(
+          tp =>
+            tp.ciente.grupo.id === fila.id &&
+            tp.tagStatus === 'Pendente Permissão',
+        ),
+        pendenteOM: getCountersTPs(
+          tp =>
+            tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Pendente O&M',
+        ),
+        aprovacao: getCountersTPs(
+          tp => tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Aprovação',
+        ),
+        autorizados: getCountersTPs(
+          tp => tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Autorizado',
+        ),
+        emExecucao: getCountersTPs(
+          tp =>
+            tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Em Execução',
+        ),
+        foraDoPrazo: getCountersTPs(
+          tp =>
+            tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Fora do Prazo',
+        ),
+        preBaixa: getCountersTPs(
+          tp => tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Pré-baixa',
+        ),
+        cancelados: getCountersTPs(
+          tp => tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Cancelado',
+        ),
+        fechados: getCountersTPs(
+          tp => tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Fechado',
+        ),
+        naoExecutados: getCountersTPs(
+          tp =>
+            tp.ciente.grupo.id === fila.id && tp.tagStatus === 'Não Executado',
+        ),
+        devolvidos: getCountersTPs(
+          tp =>
+            tp.ciente.grupo.id === fila.id &&
+            tp.carimbos.some(
+              carimbo =>
+                carimbo.tipo === 'Devolução' &&
+                carimbo.categoria === 'Devolvido',
+            ),
+        ),
+        flexibilizados: getCountersTPs(
+          tp =>
+            tp.ciente.grupo.id === fila.id &&
+            tp.carimbos.some(carimbo => carimbo.categoria === 'Flexibilizado'),
+        ),
+        posJanela: {
+          total: getCountersTPs(
+            tp => tp.ciente.grupo.id === fila.id && tp.status.id >= 70,
+          ),
+          executados: getCountersTPs(
             tp =>
-              tp.ciente && tp.ciente.grupo && tp.ciente.grupo.id === fila.id,
-          ).length || 0,
-        ids: [],
-      },
-      aprovacao: {
-        count:
-          tpsWithTag?.filter(
-            tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
               tp.ciente.grupo.id === fila.id &&
-              tp.tagStatus === 'Aprovação',
-          ).length || 0,
-        ids: [],
-      },
-      autorizados: {
-        count:
-          tpsWithTag?.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Executado',
+          ),
+          cancelados: getCountersTPs(
             tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
               tp.ciente.grupo.id === fila.id &&
-              tp.tagStatus === 'Autorizado',
-          ).length || 0,
-        ids: [],
-      },
-      emExecucao: {
-        count:
-          tpsWithTag?.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Cancelado',
+          ),
+          rollback: getCountersTPs(
             tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
               tp.ciente.grupo.id === fila.id &&
-              tp.tagStatus === 'Em Execução',
-          ).length || 0,
-        ids: [],
-      },
-      foraDoPrazo: {
-        count:
-          tpsWithTag?.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Rollback',
+          ),
+          parcial: getCountersTPs(
             tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
               tp.ciente.grupo.id === fila.id &&
-              tp.tagStatus === 'Fora do Prazo',
-          ).length || 0,
-        ids: [],
-      },
-      preBaixa: {
-        count:
-          tpsWithTag?.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Parcial',
+          ),
+          naoExecutado: getCountersTPs(
             tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
               tp.ciente.grupo.id === fila.id &&
-              tp.tagStatus === 'Pré-baixa',
-          ).length || 0,
-        ids: [],
-      },
-      cancelados: {
-        count:
-          tpsWithTag?.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Não Executado',
+          ),
+          incidencia: getCountersTPs(
             tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
               tp.ciente.grupo.id === fila.id &&
-              tp.tagStatus === 'Cancelado',
-          ).length || 0,
-        ids: [],
-      },
-      devolvidos: {
-        count:
-          tpsWithTag?.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Incidência',
+          ),
+          naoClassificado: getCountersTPs(
             tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
               tp.ciente.grupo.id === fila.id &&
-              tp.carimbos.some(
-                carimbo =>
-                  carimbo.tipo === 'Devolução' &&
-                  carimbo.categoria === 'Devolvido',
-              ),
-          ).length || 0,
-        ids: tpsWithTag
-          ?.filter(
-            tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
-              tp.ciente.grupo.id === fila.id &&
-              tp.carimbos.some(
-                carimbo =>
-                  carimbo.tipo === 'Devolução' &&
-                  carimbo.categoria === 'Devolvido',
-              ),
-          )
-          .map(tp => tp.id),
-      },
-      flexibilizados: {
-        count:
-          tpsWithTag?.filter(
-            tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
-              tp.ciente.grupo.id === fila.id &&
-              tp.carimbos.some(
-                carimbo => carimbo.categoria === 'Flexibilizado',
-              ),
-          ).length || 0,
-        ids: tpsWithTag
-          ?.filter(
-            tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
-              tp.ciente.grupo.id === fila.id &&
-              tp.carimbos.some(
-                carimbo => carimbo.categoria === 'Flexibilizado',
-              ),
-          )
-          .map(tp => tp.id),
-      },
-      naoExecutados: {
-        count:
-          tpsWithTag?.filter(
-            tp =>
-              tp.ciente &&
-              tp.ciente.grupo &&
-              tp.ciente.grupo.id === fila.id &&
-              tp.tagStatus === 'Não Executado ',
-          ).length || 0,
-        ids: [],
-      },
-      posJanela: {
-        total: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70,
-            ).length || 0,
-          ids: [],
-        },
-        executados: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Executado',
-            ).length || 0,
-          ids: tpsWithTag
-            ?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Executado',
-            )
-            .map(tp => tp.id),
-        },
-        cancelados: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Cancelado',
-            ).length || 0,
-          ids: [],
-        },
-        rollback: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Rollback',
-            ).length || 0,
-          ids: tpsWithTag
-            ?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Rollback',
-            )
-            .map(tp => tp.id),
-        },
-        parcial: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Parcial',
-            ).length || 0,
-          ids: tpsWithTag
-            ?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Parcial',
-            )
-            .map(tp => tp.id),
-        },
-        naoExecutado: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Não Executado',
-            ).length || 0,
-          ids: [],
-        },
-        incidencia: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Incidência',
-            ).length || 0,
-          ids: tpsWithTag
-            ?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Incidência',
-            )
-            .map(tp => tp.id),
-        },
-        naoClassificado: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.ciente &&
-                tp.ciente.grupo &&
-                tp.ciente.grupo.id === fila.id &&
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Não Classificado',
-            ).length || 0,
-          ids: [],
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Não Classificado',
+          ),
         },
       },
     }));
 
     return {
       groups,
-      total: {
-        count: tpsWithTag.filter(tp => tp.ciente.grupo).length || 0,
-        ids: tpsWithTag.map(tp => tp.id),
-      },
-      aprovacao: {
-        count:
-          tpsWithTag.filter(
+      counters: {
+        total: getCountersTPs(tp => tp),
+        pendentePermissao: getCountersTPs(
+          tp => tp.tagStatus === 'Pendente Permissão',
+        ),
+        pendenteOM: getCountersTPs(tp => tp.tagStatus === 'Pendente O&M'),
+        aprovacao: getCountersTPs(tp => tp.tagStatus === 'Aprovação'),
+        autorizados: getCountersTPs(tp => tp.tagStatus === 'Autorizado'),
+        emExecucao: getCountersTPs(tp => tp.tagStatus === 'Em Execução'),
+        foraDoPrazo: getCountersTPs(tp => tp.tagStatus === 'Fora do Prazo'),
+        preBaixa: getCountersTPs(tp => tp.tagStatus === 'Pré-baixa'),
+        cancelados: getCountersTPs(tp => tp.tagStatus === 'Cancelado'),
+        fechados: getCountersTPs(tp => tp.tagStatus === 'Fechado'),
+        naoExecutados: getCountersTPs(tp => tp.tagStatus === 'Não Executado'),
+        devolvidos: getCountersTPs(tp =>
+          tp.carimbos.some(
+            carimbo =>
+              carimbo.tipo === 'Devolução' && carimbo.categoria === 'Devolvido',
+          ),
+        ),
+        flexibilizados: getCountersTPs(tp =>
+          tp.carimbos.some(carimbo => carimbo.categoria === 'Flexibilizado'),
+        ),
+        posJanela: {
+          total: getCountersTPs(tp => tp.status.id >= 70),
+          executados: getCountersTPs(
             tp =>
-              tp.ciente.grupo &&
-              (tp.tagStatus as ITPGroupItem['status']) === 'Aprovação',
-          ).length || 0,
-        ids: [],
-      },
-      autorizados: {
-        count:
-          tpsWithTag.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Executado',
+          ),
+          cancelados: getCountersTPs(
             tp =>
-              tp.ciente.grupo &&
-              (tp.tagStatus as ITPGroupItem['status']) === 'Autorizado',
-          ).length || 0,
-        ids: [],
-      },
-      emExecucao: {
-        count:
-          tpsWithTag.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Cancelado',
+          ),
+          rollback: getCountersTPs(
             tp =>
-              tp.ciente.grupo &&
-              (tp.tagStatus as ITPGroupItem['status']) === 'Em Execução',
-          ).length || 0,
-        ids: [],
-      },
-      foraDoPrazo: {
-        count:
-          tpsWithTag.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Rollback',
+          ),
+          parcial: getCountersTPs(
             tp =>
-              tp.ciente.grupo &&
-              (tp.tagStatus as ITPGroupItem['status']) === 'Fora do Prazo',
-          ).length || 0,
-        ids: [],
-      },
-      preBaixa: {
-        count:
-          tpsWithTag.filter(
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Parcial',
+          ),
+          naoExecutado: getCountersTPs(
             tp =>
-              tp.ciente.grupo &&
-              (tp.tagStatus as ITPGroupItem['status']) === 'Pré-baixa',
-          ).length || 0,
-        ids: [],
-      },
-      cancelados: {
-        count:
-          tpsWithTag.filter(
-            tp => (tp.tagStatus as ITPGroupItem['status']) === 'Cancelado',
-          ).length || 0,
-        ids: [],
-      },
-      devolvidos: {
-        count:
-          tpsWithTag.filter(tp =>
-            tp.carimbos.some(
-              carimbo =>
-                carimbo.tipo === 'Devolução' &&
-                carimbo.categoria === 'Devolvido',
-            ),
-          ).length || 0,
-        ids: tpsWithTag
-          .filter(tp =>
-            tp.carimbos.some(
-              carimbo =>
-                carimbo.tipo === 'Devolução' &&
-                carimbo.categoria === 'Devolvido',
-            ),
-          )
-          .map(tp => tp.id),
-      },
-      flexibilizados: {
-        count:
-          tpsWithTag.filter(tp =>
-            tp.carimbos.some(carimbo => carimbo.categoria === 'Flexibilizado'),
-          ).length || 0,
-        ids: tpsWithTag
-          .filter(tp =>
-            tp.carimbos.some(carimbo => carimbo.categoria === 'Flexibilizado'),
-          )
-          .map(tp => tp.id),
-      },
-      naoExecutados: {
-        count:
-          tpsWithTag.filter(
-            tp => (tp.tagStatus as ITPGroupItem['status']) === 'Não Executado',
-          ).length || 0,
-        ids: [],
-      },
-      posJanela: {
-        total: {
-          count: tpsWithTag?.filter(tp => tp.status.id >= 70).length || 0,
-          ids: [],
-        },
-        executados: {
-          count:
-            tpsWithTag.filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Executado',
-            ).length || 0,
-          ids: tpsWithTag
-            .filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Executado',
-            )
-            .map(tp => tp.id),
-        },
-        cancelados: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Cancelado',
-            ).length || 0,
-          ids: [],
-        },
-        rollback: {
-          count:
-            tpsWithTag.filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Rollback',
-            ).length || 0,
-          ids: tpsWithTag
-            .filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Rollback',
-            )
-            .map(tp => tp.id),
-        },
-        parcial: {
-          count:
-            tpsWithTag.filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Parcial',
-            ).length || 0,
-          ids: tpsWithTag
-            .filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Parcial',
-            )
-            .map(tp => tp.id),
-        },
-        naoExecutado: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Não Executado',
-            ).length || 0,
-          ids: [],
-        },
-        incidencia: {
-          count:
-            tpsWithTag.filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Incidência',
-            ).length || 0,
-          ids: tpsWithTag
-            .filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Incidência',
-            )
-            .map(tp => tp.id),
-        },
-        naoClassificado: {
-          count:
-            tpsWithTag?.filter(
-              tp =>
-                tp.status.id >= 70 &&
-                tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
-                tp.baixa?.carimbo?.categoria === 'Não Classificado',
-            ).length || 0,
-          ids: [],
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Não Executado',
+          ),
+          incidencia: getCountersTPs(
+            tp =>
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Incidência',
+          ),
+          naoClassificado: getCountersTPs(
+            tp =>
+              tp.status.id >= 70 &&
+              tp.baixa?.carimbo?.tipo === 'Pré-baixa' &&
+              tp.baixa?.carimbo?.categoria === 'Não Classificado',
+          ),
         },
       },
     };

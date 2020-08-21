@@ -115,6 +115,10 @@ export default class TP {
 
   historicos: TPHistorico[];
 
+  tagStatus: string;
+
+  tagProjectPerDay: string;
+
   carimbos: ICarimbo[];
 
   setCarimbosDetails(stamps: Stamp[]): void {
@@ -134,7 +138,7 @@ export default class TP {
       this.baixa.carimbo = {
         codigo: 'Não preenchido',
         data: this.baixa.data,
-        tipo: 'Pré-Baixa',
+        tipo: 'Pré-baixa',
         categoria: 'Não preenchido',
         descrição: 'Não preenchido',
       };
@@ -145,7 +149,7 @@ export default class TP {
       );
       this.baixa.carimbo = {
         ...this.baixa.carimbo,
-        tipo: stampBaixa ? stampBaixa.type.name : 'Pré-Baixa',
+        tipo: stampBaixa ? stampBaixa.type.name : 'Pré-baixa',
         categoria: stampBaixa ? stampBaixa.category.name : 'Não Classificado',
         descrição: stampBaixa ? stampBaixa.description : 'Não Classificado',
       };
