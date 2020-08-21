@@ -19,6 +19,7 @@ interface IRequest {
 
 interface ICounter {
   numberOfProjects: number;
+  numberOfTPs: number;
   ids: number[];
 }
 
@@ -157,6 +158,10 @@ export default class LoadTPsGroupService {
 
       return {
         numberOfProjects: Object.entries(group).length,
+        numberOfTPs: Object.entries(group).reduce(
+          (acc, [, listOfTPs]) => (acc += listOfTPs.length),
+          0,
+        ),
         ids: Object.entries(group).reduce(
           (acc, [, listOfTPs]) => acc.concat(listOfTPs.map(tp => tp.id)),
           [] as number[],

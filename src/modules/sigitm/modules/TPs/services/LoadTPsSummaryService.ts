@@ -33,6 +33,7 @@ export default class LoadTPsSummaryService {
     const tpsWithTags = tps.map(tp =>
       Object.assign(tp, {
         ...tp,
+        projeto: tp.projeto || 'NULL',
         tagDate: `${format(new Date(tp.dataInicioPrevisto), 'dd/MMM/uuuu')}`,
       }),
     );
