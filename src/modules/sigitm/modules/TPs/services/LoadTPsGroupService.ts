@@ -93,7 +93,7 @@ export default class LoadTPsGroupService {
     daysBefore,
     daysAfter,
   }: IRequest): Promise<IResponse> {
-    const cacheKey = `TPsGroups-${daysBefore}-${daysBefore}ddd`;
+    const cacheKey = `TPsGroups-${daysBefore}-${daysBefore}d`;
     let tps = await this.cacheProvider.recovery<TP[]>(cacheKey);
 
     if (!tps) {
@@ -169,7 +169,7 @@ export default class LoadTPsGroupService {
       };
     };
 
-    const groups = filas.map(fila => ({
+    const groups: ITPGroup[] = filas.map(fila => ({
       grupoResponsavel: fila.nome,
       counters: {
         total: getCountersTPs(tp => tp.ciente.grupo.id === fila.id),

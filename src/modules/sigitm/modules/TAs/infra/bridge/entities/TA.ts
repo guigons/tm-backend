@@ -48,4 +48,6 @@ export default class TA {
   baixa: TABaixa;
 
   historicos: TAHistorico[];
+
+  tagTime: string;
 }
