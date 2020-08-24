@@ -69,6 +69,11 @@ interface IGetCountersTPsParams {
   stamp?: { type?: string; category?: string };
 }
 
+const sanitizer = (str: string) => {
+  if (!str) return '';
+  return str.replace(/(\t+|\s+$|^\s+)/, '');
+};
+
 @injectable()
 export default class LoadTPsGroupService {
   constructor(
@@ -144,6 +149,7 @@ export default class LoadTPsGroupService {
 
       return {
         ...tp,
+        projeto: sanitizer(tp.projeto),
         tagStatus,
         tagProjectPerDay: `${tp.projeto}-${format(
           new Date(tp.dataInicioPrevisto),

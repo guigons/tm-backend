@@ -21,6 +21,9 @@ export function deepMatch(
         if (condition.operador === 'exists') {
           return !!m[paths[i + 1]];
         }
+        if (condition.operador === 'regex') {
+          return m[paths[i + 1]].match(new RegExp(condition.value, 'i'));
+        }
         return false;
       });
     }
@@ -31,6 +34,9 @@ export function deepMatch(
   }
   if (condition.operador === 'exists') {
     return !!refObj;
+  }
+  if (condition.operador === 'regex') {
+    return refObj.match(new RegExp(condition.value, 'i'));
   }
   return false;
 }
@@ -138,6 +144,9 @@ export function filterByTemplate<T>(array: T[], template: Template): T[] {
                 }
                 if (condition.operador === 'exists') {
                   return !!r[field];
+                }
+                if (condition.operador === 'regex') {
+                  return r[field].match(new RegExp(condition.value, 'i'));
                 }
                 return false;
               }),

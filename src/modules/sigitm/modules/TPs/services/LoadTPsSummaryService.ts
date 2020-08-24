@@ -16,6 +16,11 @@ interface IResponse {
   };
 }
 
+const sanitizer = (str: string) => {
+  if (!str) return '';
+  return str.replace(/(\t+|\s+$|^\s+)/, '');
+};
+
 @injectable()
 export default class LoadTPsSummaryService {
   constructor(
@@ -30,10 +35,11 @@ export default class LoadTPsSummaryService {
     const tps = await this.TPsRepository.findByIds(ids);
     const stamps = await this.stampsRepository.findAll();
     tps.forEach(tp => tp.setCarimbosDetails(stamps));
+
     const tpsWithTags = tps.map(tp =>
       Object.assign(tp, {
         ...tp,
-        projeto: tp.projeto || 'NULL',
+        projeto: sanitizer(tp.projeto) || 'NULL',
         tagDate: `${format(new Date(tp.dataInicioPrevisto), 'dd/MMM/uuuu')}`,
       }),
     );
