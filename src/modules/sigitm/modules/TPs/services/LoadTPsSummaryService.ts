@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { injectable, inject } from 'tsyringe';
 import IStampsRepository from '@modules/stamps/repositories/IStampsRepository';
 import { format } from 'date-fns';
+import { sanitizeProject } from '../../../../../utils/Sanitizer';
 import TP from '../infra/bridge/entities/TP';
 import ITPsRepository from '../repositories/ITPsRepository';
 
@@ -15,11 +16,6 @@ interface IResponse {
     [key: string]: TP[];
   };
 }
-
-const sanitizer = (str: string) => {
-  if (!str) return '';
-  return str.replace(/(\t+|\s+$|^\s+)/, '');
-};
 
 @injectable()
 export default class LoadTPsSummaryService {
@@ -39,7 +35,7 @@ export default class LoadTPsSummaryService {
     const tpsWithTags = tps.map(tp =>
       Object.assign(tp, {
         ...tp,
-        projeto: sanitizer(tp.projeto) || 'NULL',
+        projeto: sanitizeProject(tp.projeto) || 'NULL',
         tagDate: `${format(new Date(tp.dataInicioPrevisto), 'dd/MMM/uuuu')}`,
       }),
     );

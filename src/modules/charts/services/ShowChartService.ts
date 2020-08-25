@@ -30,6 +30,7 @@ import {
   endOfMonth,
   eachMonthOfInterval,
 } from 'date-fns';
+import { sanitizeProject } from 'utils/Sanitizer';
 import Color from '../utils/Colors';
 import { groupArray, filterByTemplate } from '../utils/Array';
 
@@ -150,6 +151,7 @@ class ShowChartService {
     const tpsWithTag = tpsFiltered.map(tp =>
       Object.assign(tp, {
         ...tp,
+        projeto: sanitizeProject(tp.projeto),
         tagProjectPerDay: `${tp.projeto}-${format(
           new Date(tp.dataInicioPrevisto),
           'dd/MMM/uuuu',

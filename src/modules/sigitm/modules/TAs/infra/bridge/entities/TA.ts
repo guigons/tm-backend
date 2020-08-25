@@ -50,4 +50,33 @@ export default class TA {
   historicos: TAHistorico[];
 
   tagTime: string;
+
+  afetacao: {
+    isAfetacaoParcial: boolean;
+    afetacoesParciais: {
+      id: number;
+      data: Date;
+      transmissao: number;
+      voz: number;
+      deterministica: number;
+      speedy: number;
+      cliente: number;
+      cp: number;
+      rede_ip: number;
+      interconexao: number;
+      sppac: number;
+      dth: number;
+      fttx: number;
+      iptv: number;
+      erb: number;
+      grupo: {
+        id: number;
+        nome: string;
+      };
+      usuario: {
+        id: number;
+        nome: string;
+      };
+    }[];
+  };
 }

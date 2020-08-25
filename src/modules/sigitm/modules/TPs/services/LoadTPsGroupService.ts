@@ -8,6 +8,7 @@ import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICa
 import ISigitmGruposRepository from '@modules/sigitm/repositories/ISigitmGruposRepository';
 import IStampsRepository from '@modules/stamps/repositories/IStampsRepository';
 import { format } from 'date-fns';
+import { sanitizeProject } from '../../../../../utils/Sanitizer';
 import ITPsRepository from '../repositories/ITPsRepository';
 import TP from '../infra/bridge/entities/TP';
 
@@ -68,11 +69,6 @@ interface IGetCountersTPsParams {
   statusName?: string;
   stamp?: { type?: string; category?: string };
 }
-
-const sanitizer = (str: string) => {
-  if (!str) return '';
-  return str.replace(/(\t+|\s+$|^\s+)/, '');
-};
 
 @injectable()
 export default class LoadTPsGroupService {
@@ -149,7 +145,7 @@ export default class LoadTPsGroupService {
 
       return {
         ...tp,
-        projeto: sanitizer(tp.projeto),
+        projeto: sanitizeProject(tp.projeto),
         tagStatus,
         tagProjectPerDay: `${tp.projeto}-${format(
           new Date(tp.dataInicioPrevisto),

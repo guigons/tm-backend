@@ -7,6 +7,7 @@ import { subDays, subHours, isWithinInterval } from 'date-fns';
 import groupArray from 'group-array';
 import { injectable, inject } from 'tsyringe';
 import ICacheProvider from '@shared/container/providers/CacheProvider/models/ICacheProvider';
+import { boolean } from '@hapi/joi';
 import ITAsRepository from '../repositories/ITAsRepository';
 import TA from '../infra/bridge/entities/TA';
 
@@ -19,6 +20,8 @@ interface ICounter {
   numberOfTAsMetro: number;
   idsIP: number[];
   idsMetro: number[];
+  hasAfetacaoIP: boolean;
+  hasAfetacaoMetro: boolean;
 }
 
 interface ITACounter {
@@ -120,34 +123,30 @@ export default class LoadTAsGroupService {
       };
     });
 
-    const getCountersTAs = (fnFilter: (tp: TA) => {}): ICounter => {
-      const filtered = tasWithTag.filter(tp => fnFilter(Object.assign(tp)));
+    const getCountersTAs = (fnFilter: (ta: TA) => {}): ICounter => {
+      const filtered = tasWithTag.filter(ta => fnFilter(Object.assign(ta)));
       const group = groupArray(filtered, 'tagTime') as ITAGroupArray;
 
+      const listOfTAsIP = Object.entries(group).reduce(
+        (acc, [, listOfTAs]) =>
+          acc.concat(listOfTAs.filter(ta => ta.rede.nome === 'IP')),
+        [] as TA[],
+      );
+
+      const listOfTAsMetro = Object.entries(group).reduce(
+        (acc, [, listOfTAs]) =>
+          acc.concat(listOfTAs.filter(ta => ta.rede.nome === 'Metro')),
+        [] as TA[],
+      );
+
       return {
-        numberOfTAsIP: Object.entries(group).reduce(
-          (acc, [, listOfTAs]) =>
-            (acc += listOfTAs.filter(tp => tp.rede.nome === 'IP').length),
-          0,
-        ),
-        numberOfTAsMetro: Object.entries(group).reduce(
-          (acc, [, listOfTAs]) =>
-            (acc += listOfTAs.filter(tp => tp.rede.nome === 'Metro').length),
-          0,
-        ),
-        idsIP: Object.entries(group).reduce(
-          (acc, [, listOfTAs]) =>
-            acc.concat(
-              listOfTAs.filter(tp => tp.rede.nome === 'IP').map(tp => tp.id),
-            ),
-          [] as number[],
-        ),
-        idsMetro: Object.entries(group).reduce(
-          (acc, [, listOfTAs]) =>
-            acc.concat(
-              listOfTAs.filter(tp => tp.rede.nome === 'Metro').map(tp => tp.id),
-            ),
-          [] as number[],
+        numberOfTAsIP: listOfTAsIP.length,
+        numberOfTAsMetro: listOfTAsMetro.length,
+        idsIP: listOfTAsIP.map(ta => ta.id),
+        idsMetro: listOfTAsMetro.map(ta => ta.id),
+        hasAfetacaoIP: listOfTAsIP.some(ta => ta.afetacao.isAfetacaoParcial),
+        hasAfetacaoMetro: listOfTAsMetro.some(
+          ta => ta.afetacao.isAfetacaoParcial,
         ),
       };
     };
@@ -192,12 +191,12 @@ export default class LoadTAsGroupService {
         emTratamento: getCountersTAs(
           ta => ta.fila && ta.fila.nome === fila.nome && ta.responsavel,
         ),
-        comAfetacao: {
-          numberOfTAsIP: 0,
-          numberOfTAsMetro: 0,
-          idsIP: [],
-          idsMetro: [],
-        },
+        comAfetacao: getCountersTAs(
+          ta =>
+            ta.fila &&
+            ta.fila.nome === fila.nome &&
+            ta.afetacao.isAfetacaoParcial,
+        ),
       },
     }));
 
@@ -217,12 +216,7 @@ export default class LoadTAsGroupService {
         total: getCountersTAs(ta => ta),
         abertos: getCountersTAs(ta => !ta.responsavel),
         emTratamento: getCountersTAs(ta => ta.responsavel),
-        comAfetacao: {
-          numberOfTAsIP: 0,
-          numberOfTAsMetro: 0,
-          idsIP: [],
-          idsMetro: [],
-        },
+        comAfetacao: getCountersTAs(ta => ta.afetacao.isAfetacaoParcial),
       },
     };
   }
