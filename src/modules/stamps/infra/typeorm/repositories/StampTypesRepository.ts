@@ -30,13 +30,13 @@ class StampTypesRepository implements IStampTypesRepository {
   }
 
   public async findById(id: string): Promise<StampType | undefined> {
-    const stampType = await this.ormRepository.findOne(id);
+    const stampType = await this.ormRepository.findOne({ where: { id } });
 
     return stampType;
   }
 
   public async findByName(name: string): Promise<StampType | undefined> {
-    const stampType = await this.ormRepository.findOne({ name });
+    const stampType = await this.ormRepository.findOne({ where: { name } });
 
     return stampType;
   }

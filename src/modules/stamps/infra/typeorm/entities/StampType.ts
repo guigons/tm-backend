@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import StampTypeCategory from './StampTypeCategory';
+import StampCategory from './StampCategory';
 
 @Entity('stamp_types')
 class StampType {
@@ -16,11 +16,8 @@ class StampType {
   @Column()
   name: string;
 
-  @OneToMany(
-    () => StampTypeCategory,
-    stampTypeCategory => stampTypeCategory.type,
-  )
-  categories: StampTypeCategory[];
+  @OneToMany(() => StampCategory, stampCategory => stampCategory.type)
+  categories: StampCategory[];
 
   @CreateDateColumn()
   created_at: Date;

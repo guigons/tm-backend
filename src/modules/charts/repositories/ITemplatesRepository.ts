@@ -1,10 +1,10 @@
-import ICreateTemplateDTO from '../dtos/ICreateTemplateDTO';
 import IRemoveTemplateDTO from '../dtos/IRemoveTemplateDTO';
 import Template from '../infra/typeorm/schemas/Template';
 import IFindTemplateDTO from '../dtos/IFindTemplateDTO';
 
 export default interface ITemplatesRepository {
-  createTemplate(data: ICreateTemplateDTO): Promise<Template>;
+  create(template: Template): Promise<Template>;
+  save(template: Template): Promise<Template>;
   findTemplateByUserIdAndId(
     data: IFindTemplateDTO,
   ): Promise<Template | undefined>;

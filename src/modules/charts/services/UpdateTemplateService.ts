@@ -2,14 +2,19 @@ import AppError from '@shared/errors/AppError';
 import IUsersRepository from '@modules/users/repositories/IUsersRepository';
 import { injectable, inject } from 'tsyringe';
 import ITemplatesRepository from '@modules/charts/repositories/ITemplatesRepository';
+import TemplatesFilter from '../infra/typeorm/schemas/TemplatesFilter';
 
 interface IRequest {
   user_id: string;
   template_id: string;
+  name?: string;
+  global?: boolean;
+  target?: string;
+  filters?: TemplatesFilter[];
 }
 
 @injectable()
-class RemoveTemplateService {
+class UpdateTemplateService {
   constructor(
     @inject('UsersRepository')
     private usersRepository: IUsersRepository,
@@ -18,7 +23,14 @@ class RemoveTemplateService {
     private templatesRepository: ITemplatesRepository,
   ) {}
 
-  public async execute({ user_id, template_id }: IRequest): Promise<void> {
+  public async execute({
+    user_id,
+    template_id,
+    name,
+    global,
+    target,
+    filters,
+  }: IRequest): Promise<void> {
     const user = await this.usersRepository.findById(user_id);
     if (!user) {
       throw new AppError('User not found');
@@ -28,12 +40,29 @@ class RemoveTemplateService {
       user_id,
       template_id,
     });
+
     if (!template) {
       throw new AppError('Template not found');
     }
 
-    await this.templatesRepository.removeTemplate({ user_id, template_id });
+    if (name) {
+      template.name = name;
+    }
+
+    if (global) {
+      template.global = global;
+    }
+
+    if (target) {
+      template.target = target;
+    }
+
+    if (filters) {
+      template.filters = filters;
+    }
+
+    await this.templatesRepository.save(template);
   }
 }
 
-export default RemoveTemplateService;
+export default UpdateTemplateService;

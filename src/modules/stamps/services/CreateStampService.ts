@@ -2,7 +2,7 @@ import { injectable, inject } from 'tsyringe';
 import AppError from '@shared/errors/AppError';
 import IStampsRepository from '../repositories/IStampsRepository';
 import IStampTypesRepository from '../repositories/IStampTypesRepository';
-import IStampTypeCategoriesRepository from '../repositories/IStampTypeCategoriesRepository';
+import IStampCategoriesRepository from '../repositories/IStampCategoriesRepository';
 import Stamp from '../infra/typeorm/entities/Stamp';
 
 interface IRequest {
@@ -22,8 +22,8 @@ class CreateStampService {
     @inject('StampTypesRepository')
     private stampTypesRepository: IStampTypesRepository,
 
-    @inject('StampTypeCategoriesRepository')
-    private stampTypeCategoriesRepository: IStampTypeCategoriesRepository,
+    @inject('StampCategoriesRepository')
+    private stampCategoriesRepository: IStampCategoriesRepository,
   ) {}
 
   public async execute({
@@ -43,10 +43,10 @@ class CreateStampService {
       throw new AppError('Stamp Type not found.');
     }
 
-    const stampTypeCategory = await this.stampTypeCategoriesRepository.findById(
+    const stampCategory = await this.stampCategoriesRepository.findById(
       category_id,
     );
-    if (!stampTypeCategory) {
+    if (!stampCategory) {
       throw new AppError('Stamp Type Category not found.');
     }
 

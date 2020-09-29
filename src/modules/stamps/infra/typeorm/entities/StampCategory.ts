@@ -12,7 +12,7 @@ import {
 import StampType from './StampType';
 
 @Entity('stamp_type_categories')
-class StampTypeCategory {
+class StampCategory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -39,4 +39,4 @@ class StampTypeCategory {
   updated_at: Date;
 }
 
-export default StampTypeCategory;
+export default StampCategory;

@@ -2,12 +2,11 @@ import { MongoRepository, getMongoRepository } from 'typeorm';
 
 import ITemplatesRepository from '@modules/charts/repositories/ITemplatesRepository';
 
-import ICreateTemplateDTO from '@modules/charts/dtos/ICreateTemplateDTO';
 import IRemoveTemplateDTO from '@modules/charts/dtos/IRemoveTemplateDTO';
 import IFindTemplateDTO from '@modules/charts/dtos/IFindTemplateDTO';
+import { ObjectId, ObjectID } from 'mongodb';
+
 import Template from '../schemas/Template';
-import TemplatesFilter from '../schemas/TemplatesFilter';
-import TemplatesFilterCondition from '../schemas/TemplatesFilterCondition';
 
 class TemplatesRepository implements ITemplatesRepository {
   private ormRepository: MongoRepository<Template>;
@@ -16,38 +15,31 @@ class TemplatesRepository implements ITemplatesRepository {
     this.ormRepository = getMongoRepository(Template, 'tm-mongo');
   }
 
-  public async createTemplate({
-    user_id,
-    name,
-    global,
-    target,
-    filters,
-  }: ICreateTemplateDTO): Promise<Template> {
-    const template = this.ormRepository.create({
-      user_id,
-      name,
-      global,
-      target,
-    });
-
-    // FILTERS
+  public async create(template: Template): Promise<Template> {
     Object.assign(template, {
-      filters: filters.map(f => {
-        const filter = new TemplatesFilter();
-        Object.assign(filter, {
-          conditions: f.conditions.map((c: TemplatesFilterCondition) => {
-            const condition = new TemplatesFilterCondition();
-            condition.key = c.key;
-            condition.operador = c.operador;
-            condition.value = c.value;
-            return condition;
-          }),
-        });
-        return filter;
-      }),
+      filters: template.filters.map(f => ({
+        ...f,
+        _id: new ObjectId(f._id),
+        conditions: f.conditions.map(c => ({ ...c, _id: new ObjectId(c._id) })),
+      })),
     });
 
-    await this.ormRepository.save(template);
+    await this.ormRepository.insertOne(template);
+    return template;
+  }
+
+  public async save(template: Template): Promise<Template> {
+    Object.assign(template, {
+      filters: template.filters.map(f => ({
+        ...f,
+        _id: new ObjectId(f._id),
+        conditions: f.conditions.map(c => ({ ...c, _id: new ObjectId(c._id) })),
+      })),
+    });
+    await this.ormRepository.update(
+      { _id: new ObjectId(template._id) },
+      template,
+    );
     return template;
   }
 
@@ -59,11 +51,11 @@ class TemplatesRepository implements ITemplatesRepository {
       where: {
         $or: [
           {
-            _id: template_id,
+            _id: new ObjectID(template_id),
             user_id,
           },
           {
-            _id: template_id,
+            _id: new ObjectID(template_id),
             global: true,
           },
         ],
@@ -92,7 +84,7 @@ class TemplatesRepository implements ITemplatesRepository {
     template_id,
   }: IRemoveTemplateDTO): Promise<void> {
     await this.ormRepository.findOneAndDelete({
-      _id: template_id,
+      _id: new ObjectID(template_id),
     });
   }
 }

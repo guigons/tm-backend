@@ -44,10 +44,10 @@ stampTypesRouter.delete(
 );
 
 stampTypesRouter.patch(
-  '/:template_id',
+  '/:id',
   celebrate({
     [Segments.PARAMS]: {
-      template_id: Joi.string().uuid().required(),
+      id: Joi.string().uuid().required(),
     },
     [Segments.BODY]: {
       id: Joi.string().uuid(),
@@ -62,8 +62,14 @@ stampTypesRouter.patch(
           description: Joi.string().allow('', null),
           type_id: Joi.string().uuid(),
           category_id: Joi.string().uuid(),
+          created_at: Joi.string(),
+          updated_at: Joi.string(),
         }),
+        created_at: Joi.string(),
+        updated_at: Joi.string(),
       }),
+      created_at: Joi.string(),
+      updated_at: Joi.string(),
     },
   }),
   stampTypesController.update,

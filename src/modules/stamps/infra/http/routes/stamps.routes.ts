@@ -24,6 +24,22 @@ stampsRouter.post(
   stampsController.create,
 );
 
+stampsRouter.patch(
+  '/:id',
+  celebrate({
+    [Segments.BODY]: {
+      id: Joi.string().uuid(),
+      type_id: Joi.string().uuid(),
+      category_id: Joi.string().uuid(),
+      cod: Joi.string(),
+      description: Joi.string(),
+      created_at: Joi.string(),
+      updated_at: Joi.string(),
+    },
+  }),
+  stampsController.update,
+);
+
 stampsRouter.delete(
   '/:id',
   celebrate({

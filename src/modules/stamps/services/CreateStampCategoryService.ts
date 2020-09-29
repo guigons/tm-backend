@@ -1,8 +1,8 @@
 import { injectable, inject } from 'tsyringe';
 import AppError from '@shared/errors/AppError';
-import IStampTypeCategoriesRepository from '../repositories/IStampTypeCategoriesRepository';
+import IStampCategoriesRepository from '../repositories/IStampCategoriesRepository';
 import IStampTypesRepository from '../repositories/IStampTypesRepository';
-import StampTypeCategory from '../infra/typeorm/entities/StampTypeCategory';
+import StampCategory from '../infra/typeorm/entities/StampCategory';
 
 interface IRequest {
   id: string;
@@ -11,25 +11,25 @@ interface IRequest {
 }
 
 @injectable()
-class CreateStampTypeCategoryService {
+class CreateStampCategoryService {
   constructor(
     @inject('StampTypesRepository')
     private stampTypesRepository: IStampTypesRepository,
 
-    @inject('StampTypeCategoriesRepository')
-    private stampTypeCategoriesRepository: IStampTypeCategoriesRepository,
+    @inject('StampCategoriesRepository')
+    private stampCategoriesRepository: IStampCategoriesRepository,
   ) {}
 
   public async execute({
     id,
     name,
     type_id,
-  }: IRequest): Promise<StampTypeCategory> {
-    const checkStampTypeCategoryExists = await this.stampTypeCategoriesRepository.findByName(
+  }: IRequest): Promise<StampCategory> {
+    const checkStampCategoryExists = await this.stampCategoriesRepository.findByName(
       name,
       type_id,
     );
-    if (checkStampTypeCategoryExists) {
+    if (checkStampCategoryExists) {
       throw new AppError('Stamp Type Category name already used.');
     }
 
@@ -38,14 +38,14 @@ class CreateStampTypeCategoryService {
       throw new AppError('Stamp Type not found.');
     }
 
-    const stampTypeCategory = await this.stampTypeCategoriesRepository.create({
+    const stampCategory = await this.stampCategoriesRepository.create({
       id,
       name,
       type_id,
     });
 
-    return stampTypeCategory;
+    return stampCategory;
   }
 }
 
-export default CreateStampTypeCategoryService;
+export default CreateStampCategoryService;

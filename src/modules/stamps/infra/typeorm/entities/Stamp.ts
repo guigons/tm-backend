@@ -8,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import StampType from './StampType';
-import StampTypeCategory from './StampTypeCategory';
+import StampCategory from './StampCategory';
 
 @Entity('stamps')
 class Stamp {
@@ -40,12 +40,12 @@ class Stamp {
   })
   type: StampType;
 
-  @ManyToOne(() => StampTypeCategory)
+  @ManyToOne(() => StampCategory)
   @JoinColumn({
     name: 'category_id',
     referencedColumnName: 'id',
   })
-  category: StampTypeCategory;
+  category: StampCategory;
 }
 
 export default Stamp;

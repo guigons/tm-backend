@@ -31,15 +31,13 @@ class StampsRepository implements IStampsRepository {
   }
 
   public async findById(id: string): Promise<Stamp | undefined> {
-    const stamp = await this.ormRepository.findOne(id);
+    const stamp = await this.ormRepository.findOne({ where: { id } });
 
     return stamp;
   }
 
   public async findByCod(cod: string): Promise<Stamp | undefined> {
-    const stamp = await this.ormRepository.findOne({
-      cod,
-    });
+    const stamp = await this.ormRepository.findOne({ where: { cod } });
 
     return stamp;
   }

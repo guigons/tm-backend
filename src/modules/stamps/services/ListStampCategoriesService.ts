@@ -1,18 +1,18 @@
 import { injectable, inject } from 'tsyringe';
-import IStampTypeCategoriesRepository from '../repositories/IStampTypeCategoriesRepository';
-import StampTypeCategory from '../infra/typeorm/entities/StampTypeCategory';
+import IStampCategoriesRepository from '../repositories/IStampCategoriesRepository';
+import StampCategory from '../infra/typeorm/entities/StampCategory';
 
 @injectable()
 class ListStampCategories {
   constructor(
-    @inject('StampTypeCategoriesRepository')
-    private stampTypeCategoriesRepository: IStampTypeCategoriesRepository,
+    @inject('StampCategoriesRepository')
+    private stampCategoriesRepository: IStampCategoriesRepository,
   ) {}
 
-  public async execute(): Promise<StampTypeCategory[]> {
-    const stampTypeCategories = await this.stampTypeCategoriesRepository.findAll();
+  public async execute(): Promise<StampCategory[]> {
+    const stampCategories = await this.stampCategoriesRepository.findAll();
 
-    return stampTypeCategories;
+    return stampCategories;
   }
 }
 
