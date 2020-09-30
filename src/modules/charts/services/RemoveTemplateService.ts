@@ -2,10 +2,11 @@ import AppError from '@shared/errors/AppError';
 import IUsersRepository from '@modules/users/repositories/IUsersRepository';
 import { injectable, inject } from 'tsyringe';
 import ITemplatesRepository from '@modules/charts/repositories/ITemplatesRepository';
+import { ObjectId } from 'mongodb';
 
 interface IRequest {
   user_id: string;
-  template_id: string;
+  template_id: ObjectId;
 }
 
 @injectable()

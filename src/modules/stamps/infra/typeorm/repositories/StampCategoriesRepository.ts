@@ -1,7 +1,7 @@
 import { getRepository, Repository } from 'typeorm';
 import StampCategory from '../entities/StampCategory';
 import IStampCategoriesRepository from '../../../repositories/IStampCategoriesRepository';
-import ICreateStampCategoryDTO from '../../../dtos/ICreateStampTypeCategoryDTO';
+import ICreateStampCategoryDTO from '../../../dtos/ICreateStampCategoryDTO';
 
 class StampCategoryCategoriesRepository implements IStampCategoriesRepository {
   private ormRepository: Repository<StampCategory>;

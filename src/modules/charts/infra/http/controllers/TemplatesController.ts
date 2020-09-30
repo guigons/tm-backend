@@ -63,7 +63,7 @@ export default class TemplatesController {
 
     await removeTemplate.execute({
       user_id,
-      template_id,
+      template_id: new ObjectID(template_id),
     });
 
     return response.status(204).json();
@@ -78,7 +78,7 @@ export default class TemplatesController {
 
     await updateTemplate.execute({
       user_id,
-      template_id,
+      template_id: new ObjectID(template_id),
       name,
       global,
       target,
